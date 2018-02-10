@@ -9,7 +9,7 @@
 #'
 #' @examples
 #'
-run <- function(
+shed <- function(
   infile  = system.file("iris.csv", package = "csvshine"),
   outfile = ifelse (rlang::is_scalar_character(infile), infile, tempfile(fileext = ".csv")),
   informat = "csv",
@@ -18,7 +18,7 @@ run <- function(
   tf <- tempfile()
   on.exit(try(unlink(tf)))
 
-  shinycsv_app <- shiny::shinyApp(
+  shed_app <- shiny::shinyApp(
     ui = fluidPage(
       theme = shinythemes::shinytheme("superhero"),
       width = "100%",
@@ -131,16 +131,16 @@ run <- function(
     }
   )
 
-  invisible(runApp(shinycsv_app))
+  invisible(runApp(shed_app))
 }
 
 
 
-run2 <- function(
+shed2 <- function(
   infile  = system.file("iris.csv", package = "csvshine"),
   outfile = infile
 ){
-  run(
+  shed(
     infile = infile,
     outfile = outfile,
     informat = "csv2",

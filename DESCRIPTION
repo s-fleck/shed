@@ -1,13 +1,13 @@
-Package: csvshine
+Package: shed
 Type: Package
-Title: What the Package Does (Title Case)
-Version: 0.1.0
-Author: Who wrote it
-Maintainer: The package maintainer <yourself@somewhere.net>
-Description: More about what it does (maybe more than one line)
-    Use four spaces when indenting paragraphs within the Description.
-License: What license is it under?
+Title: Shiny CSV Editor
+Version: 0.0.1.9000
+Authors@R: person("Stefan", "Fleck", email = "stefan.b.fleck@gmail.com", role = c("aut", "cre"))
+Maintainer: Stefan Fleck <stefan.b.fleck@gmail.com>
+Description: A minimal csv file editor based on 'shiny' and 'rhandsontable'.
+License: MIT + file LICENSE
 Encoding: UTF-8
 Imports: shiny, rhandsontable
 LazyData: true
+Roxygen: list(markdown = TRUE)
 RoxygenNote: 6.0.1.9000
