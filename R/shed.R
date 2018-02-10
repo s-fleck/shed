@@ -4,16 +4,14 @@
 #' @param outfile
 #' @param ...
 #'
-#' @return The edited csv file a `data.frame` (invisibly)
+#' @return The edited csv file as a `data.frame` (invisibly)
 #' @export
 #'
 #' @examples
 #'
 shed <- function(
-  infile  = system.file("iris.csv", package = "csvshine"),
-  outfile = ifelse (rlang::is_scalar_character(infile), infile, tempfile(fileext = ".csv")),
-  informat = "csv",
-  outformat = informat,
+  infile,
+  outfile = make_outfile_name(infile),
   write_funs = list(
     csv  = purrr::partial(readr::write_excel_csv, col_names = FALSE),
     csv2 = purrr::partial(readr::write_excel_csv2, col_names = FALSE)
@@ -53,8 +51,7 @@ shed <- function(
           selectInput(
             "readFun",
             NULL,
-            c("csv", "csv2"),
-            selected = informat,
+            names(read_funs),
             width = 80
           )
         ),
@@ -67,8 +64,7 @@ shed <- function(
           selectInput(
             "writeFun",
             NULL,
-            c("csv", "csv2"),
-            selected = outformat,
+            names(write_funs),
             width = 80
           )
         )
@@ -136,18 +132,34 @@ shed <- function(
 
 
 shed2 <- function(
-  infile  = system.file("iris.csv", package = "csvshine"),
-  outfile = infile
+  infile,
+  outfile = make_outfile_name(infile)
 ){
   shed(
     infile = infile,
     outfile = outfile,
-    informat = "csv2",
-    outformat = "csv2"
+    write_funs = list(
+      csv2 = purrr::partial(readr::write_excel_csv2, col_names = FALSE),
+      csv  = purrr::partial(readr::write_excel_csv, col_names = FALSE)
+    ),
+    read_funs = list(
+      csv2 = purrr::compose(
+        as.data.frame,
+        purrr::partial(readr::read_csv2, col_names = FALSE)
+      ),
+      csv  = purrr::compose(
+        as.data.frame,
+        purrr::partial(readr::read_csv, col_names = FALSE)
+      )
+    )
   )
 }
 
 
+
+make_outfile_name <- function(x){
+  ifelse (rlang::is_scalar_character(x), x, tempfile(fileext = ".csv"))
+}
 
 
 shinycsv_css <-
