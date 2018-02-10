@@ -13,11 +13,22 @@ shed <- function(
   infile  = system.file("iris.csv", package = "csvshine"),
   outfile = ifelse (rlang::is_scalar_character(infile), infile, tempfile(fileext = ".csv")),
   informat = "csv",
-  outformat = informat
+  outformat = informat,
+  write_funs = list(
+    csv  = purrr::partial(readr::write_excel_csv, col_names = FALSE),
+    csv2 = purrr::partial(readr::write_excel_csv2, col_names = FALSE)
+  ),
+  read_funs = list(
+    csv  = purrr::compose(
+      as.data.frame,
+      purrr::partial(readr::read_csv, col_names = FALSE)
+    ),
+    csv2 = purrr::compose(
+      as.data.frame,
+      purrr::partial(readr::read_csv2, col_names = FALSE)
+    )
+  )
 ){
-  tf <- tempfile()
-  on.exit(try(unlink(tf)))
-
   shed_app <- shiny::shinyApp(
     ui = fluidPage(
       theme = shinythemes::shinytheme("superhero"),
@@ -40,7 +51,7 @@ shed <- function(
         div(
           style="display: inline-block;vertical-align:top;width:130px",
           selectInput(
-            "writeFun",
+            "readFun",
             NULL,
             c("csv", "csv2"),
             selected = informat,
@@ -54,7 +65,7 @@ shed <- function(
         div(
           style="display: inline-block;vertical-align:top;width:130px",
           selectInput(
-            "readFun",
+            "writeFun",
             NULL,
             c("csv", "csv2"),
             selected = outformat,
@@ -75,19 +86,6 @@ shed <- function(
     server = function(input, output, session) {
 
       values <- reactiveValues()
-
-      write_funs <- list(
-        csv  = purrr::partial(readr::write_excel_csv, col_names = FALSE),
-        csv2 = purrr::partial(readr::write_excel_csv2, col_names = FALSE)
-      )
-
-      read_funs <- list(
-        csv  = purrr::partial(readr::read_csv, col_names = FALSE),
-        csv2 = purrr::partial(readr::read_csv2, col_names = FALSE)
-      )
-
-      write_fun <- reactive({ write_funs[[input$writeFun]] })
-      read_fun  <- reactive({ read_funs[[input$readFun]] })
 
       observe({
         if (!is.null(input$hot)) {
@@ -116,12 +114,13 @@ shed <- function(
       observeEvent(input$btnSave, {
         .output <- isolate(values[["output"]] )
         .output[] <- lapply(.output, readr::parse_guess)
-        write_fun()(.output, path = input$outputFile)
-        saveRDS(.output, file = tf)
+        write_fun <- write_funs[[input$writeFun]]
+        write_fun(.output, path = input$outputFile)
       })
 
       observeEvent(input$btnLoad, {
-        try(values[["output"]] <- read_fun()(outfile))
+        read_fun <- read_funs[[input$readFun]]
+        try(values[["output"]] <- read_fun(file = input$outputFile))
       })
 
       session$onSessionEnded(function() {
@@ -172,5 +171,61 @@ shinycsv_css <-
   .handsontable {
     overflow: auto;
     color: black;
+  }
+"
+
+
+shinycsv_css <-
+  "
+  #panelTop {
+    background: #bbbbbb;
+    height = 250px;
+    margin-top = 35px;
+    margin-bottom = 35px;
+    z-index: 10000;
+  }
+
+  .handsontable .currentRow {
+    background-color: #E7E8EF;
+  }
+
+  .handsontable .currentCol {
+    background-color: #F9F9FB;
+  }
+
+  .handsontable {
+    overflow: auto;
+  }
+
+
+  /* Master */
+  .ht_master tr td {
+    background-color: #181712;
+    color: #f0f0f0
+    font-size: 200%
+  }
+
+  /* All headers */
+  .handsontable th {
+    background-color: #2b3e50;
+    color: #757571;
+  }
+
+
+
+  /* Borders (data) */
+  .ht_master tr > td {
+      border-bottom: 1px solid #2b3e50!important;
+      border-right: 1px solid #2b3e50!important;
+      border-top: 1px solid #2b3e50!important;
+      border-left: 1px solid #2b3e50!important;
+   }
+
+  /* Borders (row numbers) */
+  .ht_clone_left th {
+      border-bottom: 1px solid #2b3e50!important;
+      border-right: 1px solid #2b3e50!important;
+      border-top: 1px solid #2b3e50!important;
+      border-left: 1px solid #2b3e50!important;
   }
 "
