@@ -1,30 +1,29 @@
-#' Title
+#' Edit csv Files With Shiny
 #'
-#' @param infile
-#' @param outfile
-#' @param ...
+#' @param infile Input file
+#' @param outfile Output file path
+#' @param write_funs write functions
+#' @param read_funs read functions
 #'
 #' @return The edited csv file as a `data.frame` (invisibly)
 #' @export
 #'
 #' @examples
 #'
+#' \dontrun{
+#' shed(iris)
+#' }
+#'
 shed <- function(
   infile,
   outfile = make_outfile_name(infile),
   write_funs = list(
-    csv  = purrr::partial(readr::write_excel_csv, col_names = FALSE),
-    csv2 = purrr::partial(readr::write_excel_csv2, col_names = FALSE)
+    csv  = shed_write_csv,
+    csv2 = shed_write_csv2
   ),
   read_funs = list(
-    csv  = purrr::compose(
-      as.data.frame,
-      purrr::partial(readr::read_csv, col_names = FALSE)
-    ),
-    csv2 = purrr::compose(
-      as.data.frame,
-      purrr::partial(readr::read_csv2, col_names = FALSE)
-    )
+    csv  = shed_read_csv,
+    csv2 = shed_read_csv2
   )
 ){
   shed_app <- shiny::shinyApp(
@@ -43,30 +42,20 @@ shed <- function(
         textInput("outputFile", NULL, outfile, width = "100%"),
 
         div(
-          style="display: inline-block;vertical-align:top;",
-          actionButton("btnLoad", "load", style="padding:6px; font-size:90%", width = 80)),
+          style = "display: inline-block;vertical-align:top;",
+          actionButton("btnLoad", "load", style="padding:6px; font-size:90%", width = 80)),  #nolint
 
         div(
-          style="display: inline-block;vertical-align:top;width:130px",
-          selectInput(
-            "readFun",
-            NULL,
-            names(read_funs),
-            width = 80
-          )
+          style = "display: inline-block;vertical-align:top;width:130px",
+          selectInput("readFun", NULL, names(read_funs), width = 80)
         ),
 
         div(
-          style="display: inline-block;vertical-align:top;height:30px",
-          actionButton("btnSave", "save", style="padding:6px; font-size:90%", width = 80)),
+          style = "display: inline-block;vertical-align:top;height:30px",
+          actionButton("btnSave", "save", style = "padding:6px; font-size:90%", width = 80)), #nolint
         div(
-          style="display: inline-block;vertical-align:top;width:130px",
-          selectInput(
-            "writeFun",
-            NULL,
-            names(write_funs),
-            width = 80
-          )
+          style = "display: inline-block;vertical-align:top;width:130px",
+          selectInput("writeFun", NULL, names(write_funs), width = 80)
         )
       ),
 
@@ -103,7 +92,12 @@ shed <- function(
 
       output$hot <- renderRHandsontable({
         if(!is.null(values[["output"]])){
-          rhandsontable(values[["output"]], readOnly = FALSE, useTypes = FALSE, colHeaders = NULL)
+          rhandsontable(
+            values[["output"]],
+            readOnly = FALSE,
+            useTypes = FALSE,
+            colHeaders = NULL
+          )
         }
       })
 
@@ -116,7 +110,7 @@ shed <- function(
 
       observeEvent(input$btnLoad, {
         read_fun <- read_funs[[input$readFun]]
-        try(values[["output"]] <- read_fun(file = input$outputFile))
+        try(values[["output"]] <- read_fun(input$outputFile))
       })
 
       session$onSessionEnded(function() {
@@ -131,6 +125,8 @@ shed <- function(
 
 
 
+
+#' @rdname shed
 shed2 <- function(
   infile,
   outfile = make_outfile_name(infile)
@@ -139,21 +135,16 @@ shed2 <- function(
     infile = infile,
     outfile = outfile,
     write_funs = list(
-      csv2 = purrr::partial(readr::write_excel_csv2, col_names = FALSE),
-      csv  = purrr::partial(readr::write_excel_csv, col_names = FALSE)
+      csv2 = shed_write_csv2,
+      csv  = shed_write_csv
     ),
     read_funs = list(
-      csv2 = purrr::compose(
-        as.data.frame,
-        purrr::partial(readr::read_csv2, col_names = FALSE)
-      ),
-      csv  = purrr::compose(
-        as.data.frame,
-        purrr::partial(readr::read_csv, col_names = FALSE)
-      )
+      csv2 = shed_read_csv2,
+      csv  = shed_read_csv
     )
   )
 }
+
 
 
 
@@ -191,11 +182,11 @@ shed_split <- function(
         textInput("outputFile", NULL, outfile, width = "100%"),
 
         div(
-          style="display: inline-block;vertical-align:top;",
-          actionButton("btnLoad", "load", style="padding:6px; font-size:90%", width = 80)),
+          style = "display: inline-block;vertical-align:top;",
+          actionButton("btnLoad", "load", style = "padding:6px; font-size:90%", width = 80)),  #nolint
 
         div(
-          style="display: inline-block;vertical-align:top;width:130px",
+          style = "display: inline-block;vertical-align:top;width:130px",
           selectInput(
             "readFun",
             NULL,
@@ -205,10 +196,10 @@ shed_split <- function(
         ),
 
         div(
-          style="display: inline-block;vertical-align:top;height:30px",
-          actionButton("btnSave", "save", style="padding:6px; font-size:90%", width = 80)),
+          style = "display: inline-block;vertical-align:top;height:30px",
+          actionButton("btnSave", "save", style = "padding:6px; font-size:90%", width = 80)),  #nolint
         div(
-          style="display: inline-block;vertical-align:top;width:130px",
+          style = "display: inline-block;vertical-align:top;width:130px",
           selectInput(
             "writeFun",
             NULL,
@@ -233,8 +224,8 @@ shed_split <- function(
     server = function(input, output, session) {
 
       values    <- reactiveValues()
-      read_fun  <- reactive({ read_funs[[input$readFun]] })
-      write_fun <- reactive({ write_funs[[input$writeFun]] })
+      read_fun  <- reactive({ read_funs[[input$readFun]] })   #nolint
+      write_fun <- reactive({ write_funs[[input$writeFun]] })   #nolint
 
       observe({
         if (!is.null(input$hot)) {
@@ -255,19 +246,23 @@ shed_split <- function(
         values[["output"]] <- output
       })
 
+
       output$hot <- renderRHandsontable({
         if(!is.null(values[["output"]])){
-          rhandsontable(values[["output"]], readOnly = FALSE, useTypes = FALSE, colHeaders = NULL)
+          rhandsontable(
+            values[["output"]],
+            readOnly = FALSE,
+            useTypes = FALSE,
+            colHeaders = NULL
+          )  #nolint
         }
       })
-
 
       output_text <- reactive({
         try(paste(values[["output_text"]], collapse = "\n"))
       })
 
       output$text <- renderText({ output_text() })
-
 
       observeEvent(input$btnSave, {
         .output <- isolate(values[["output"]] )
@@ -284,7 +279,6 @@ shed_split <- function(
       session$onSessionEnded(function() {
         stopApp(isolate(values[["output"]]))
       })
-
     }
   )
 
@@ -296,10 +290,31 @@ shed_split <- function(
 
 
 
+
+
+
+# helpers -----------------------------------------------------------------
+
+shed_read_csv   <- function(path) as.data.frame(readr::read_csv(path, col_names = FALSE))
+shed_read_csv2  <- function(path) as.data.frame(readr::read_csv2(path, col_names = FALSE))
+shed_write_csv  <- function(x, path) readr::write_excel_csv(x, path, col_names = FALSE)
+shed_write_csv2 <- function(x, path) readr::write_excel_csv2(x, path, col_names = FALSE)
+
+
+
+
 make_outfile_name <- function(x){
-  ifelse (rlang::is_scalar_character(x), x, tempfile(fileext = ".csv"))
+  ifelse(
+    is.character(x) && (length(x) == 1),
+    x,
+    tempfile(fileext = ".csv")
+  )
 }
 
+
+
+
+# css themes --------------------------------------------------------------
 
 shinycsv_css <-
 "
@@ -324,6 +339,8 @@ shinycsv_css <-
     color: black;
   }
 "
+
+
 
 
 shinycsv_css <-
@@ -381,4 +398,3 @@ shinycsv_css <-
       border-left: 1px solid #2b3e50!important;
   }
 "
-

@@ -3,7 +3,7 @@
 shed
 ====
 
-A minimal utf8-csv editor made with shiny and rhandsontable. Not yet usable, check again in April.
+A minimal csv editor made with shiny and rhandsontable. Very basic functionality at the moment, check back later this year.
 
 Installation
 ------------

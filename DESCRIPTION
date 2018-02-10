@@ -1,13 +1,13 @@
 Package: shed
 Type: Package
 Title: Shiny CSV Editor
-Version: 0.0.1.9000
+Version: 0.0.2
 Authors@R: person("Stefan", "Fleck", email = "stefan.b.fleck@gmail.com", role = c("aut", "cre"))
 Maintainer: Stefan Fleck <stefan.b.fleck@gmail.com>
 Description: A minimal csv file editor based on 'shiny' and 'rhandsontable'.
 License: MIT + file LICENSE
 Encoding: UTF-8
-Imports: shiny, rhandsontable, readr, rlang
+Imports: shiny, rhandsontable, readr, shinythemes
 LazyData: true
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 6.0.1.9000
