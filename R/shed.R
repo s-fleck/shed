@@ -4,6 +4,18 @@
 #' @param outfile Output file path
 #' @param write_funs write functions
 #' @param read_funs read functions
+#' @param options Options to configure behaviour and appearence of the shed
+#'   app (see below)
+#'
+#'
+#' @section Options:
+#'
+#'  Options can be set with `options(option = value)`
+#'
+#'  \describe{
+#'    \item{shed.font_size}{Font Size of the Table Cells}
+#'  }
+#'
 #'
 #' @return The edited csv file as a `data.frame` (invisibly)
 #' @export
@@ -24,14 +36,21 @@ shed <- function(
   read_funs = list(
     csv  = shed_read_csv,
     csv2 = shed_read_csv2
+  ),
+  options = list(
+    font_size = getOption("shed.font_size", 16)
   )
 ){
+
+  # init
+  css <- shinycsv_css(paste(options$font_size))
+
   shed_app <- shiny::shinyApp(
     ui = fluidPage(
       theme = shinythemes::shinytheme("superhero"),
       width = "100%",
       tags$head(
-        tags$style(HTML(shinycsv_css))
+        tags$style(HTML(css))
       ),
 
       fixedPanel(
@@ -96,7 +115,8 @@ shed <- function(
             values[["output"]],
             readOnly = FALSE,
             useTypes = FALSE,
-            colHeaders = NULL
+            colHeaders = NULL,
+            rowHeights = options$font_size + 20
           )
         }
       })
@@ -116,7 +136,6 @@ shed <- function(
       session$onSessionEnded(function() {
         stopApp(isolate(values[["output"]]))
       })
-
     }
   )
 
@@ -166,6 +185,7 @@ shed_split <- function(
     )
   )
 ){
+
   shed_app <- shiny::shinyApp(
     ui = fluidPage(
       theme = shinythemes::shinytheme("superhero"),
@@ -316,85 +336,78 @@ make_outfile_name <- function(x){
 
 # css themes --------------------------------------------------------------
 
-shinycsv_css <-
-"
-  #panelTop {
-    background: #bbbbbb;
-    height = 250px;
-    margin-top = 35px;
-    margin-bottom = 35px;
-    z-index: 10000;
-  }
+shinycsv_css <- function(
+  font_size
+){
+  stopifnot(length(font_size) == 1)
 
-  .handsontable .currentRow {
-    background-color: #E7E8EF;
-  }
+  sprintf("
+    body {
+      background: #000000;
+    }
 
-  .handsontable .currentCol {
-    background-color: #F9F9FB;
-  }
+    #panelTop {
+      background: #bbbbbb;
+      height = 250px;
+      margin-top = 35px;
+      margin-bottom = 35px;
+      z-index: 10000;
+    }
 
-  .handsontable {
-    overflow: auto;
-    color: black;
-  }
-"
+    .handsontable {
+      overflow: auto;
+    }
 
+    handsontable .currentRow {
+      background-color: #E7E8EF;
+    }
 
+    handsontable .currentCol {
+      background-color: #F9F9FB;
+    }
 
-
-shinycsv_css <-
-  "
-  #panelTop {
-    background: #bbbbbb;
-    height = 250px;
-    margin-top = 35px;
-    margin-bottom = 35px;
-    z-index: 10000;
-  }
-
-  handsontable .currentRow {
-    background-color: #E7E8EF;
-  }
-
-  handsontable .currentCol {
-    background-color: #F9F9FB;
-  }
-
-  .handsontable {
-    overflow: auto;
-  }
 
   /* Master */
-  #hot tr td {
-    background-color: #181712;
-    color: #f0f0f0
-  }
+
+    #hot tr td {
+      font-size: %spx!important;
+      background-color: #181712;
+      color: #f0f0f0;
+      vertical-align: middle;
+    }
 
   /* All headers */
-  #hot.handsontable th {
-    background-color: #2b3e50;
-    color: #757571;
-  }
+    #hot .handsontable th {
+      background-color: #000000;
+      color: #757571;
+      vertical-align: middle;
+    }
 
   /* Context Menue */
-  .htMenu tr td {
-    color: #2b3e50;
-  }
+    .htMenu tr td {
+      color: #2b3e50;
+    }
 
   /* Borders (data) */
-  #hot .ht_master tr > td {
-      border-bottom: 1px solid #2b3e50!important;
-      border-right: 1px solid #2b3e50!important;
-      border-top: 1px solid #2b3e50!important;
-      border-left: 1px solid #2b3e50!important;
-   }
+    #hot .ht_master tr > td {
+      border-bottom: 1px solid #000000!important;
+      border-right: 0px solid #000000!important;
+      border-top: 1px solid #000000!important;
+      border-left: 0px solid #000000!important;
+    }
 
   /* Borders (row numbers) */
-  #hot .ht_clone_left th {
-      border-bottom: 1px solid #2b3e50!important;
-      border-right: 1px solid #2b3e50!important;
-      border-top: 1px solid #2b3e50!important;
-      border-left: 1px solid #2b3e50!important;
-  }
-"
+    #hot .ht_clone_left th {
+      border-bottom: 1px solid #000000!important;
+      border-right: 0px solid #000000!important;
+      border-top: 1px solid #000000!important;
+      border-left: 0px solid #000000!important;
+    }
+
+
+
+
+  ",
+    font_size
+  )
+}
