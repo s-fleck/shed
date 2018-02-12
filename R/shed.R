@@ -43,7 +43,18 @@ shed <- function(
 ){
 
   # init
-  css <- shinycsv_css(paste(options$font_size))
+  css <- paste(
+    shinycsv_css,
+    sprintf(
+    "
+      #hot tr td {
+        font-size: %spx;
+      }
+    ",
+      options$font_size
+    )
+  )
+
 
   shed_app <- shiny::shinyApp(
     ui = fluidPage(
@@ -336,12 +347,8 @@ make_outfile_name <- function(x){
 
 # css themes --------------------------------------------------------------
 
-shinycsv_css <- function(
-  font_size
-){
-  stopifnot(length(font_size) == 1)
-
-  sprintf("
+shinycsv_css <-
+"
     body {
       background: #000000;
     }
@@ -370,10 +377,10 @@ shinycsv_css <- function(
   /* Master */
 
     #hot tr td {
-      font-size: %spx!important;
       background-color: #181712;
       color: #f0f0f0;
       vertical-align: middle;
+      font-family: monospace;
     }
 
   /* All headers */
@@ -392,7 +399,7 @@ shinycsv_css <- function(
     #hot .ht_master tr > td {
       border-bottom: 1px solid #000000!important;
       border-right: 0px solid #000000!important;
-      border-top: 1px solid #000000!important;
+      border-top: 0px solid #000000!important;
       border-left: 0px solid #000000!important;
     }
 
@@ -400,14 +407,8 @@ shinycsv_css <- function(
     #hot .ht_clone_left th {
       border-bottom: 1px solid #000000!important;
       border-right: 0px solid #000000!important;
-      border-top: 1px solid #000000!important;
+      border-top: 0px solid #000000!important;
       border-left: 0px solid #000000!important;
     }
 
-
-
-
-  ",
-    font_size
-  )
-}
+"
