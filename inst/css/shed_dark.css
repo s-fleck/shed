@@ -5,7 +5,7 @@ body {
 #panelTop {
   background: #bbbbbb;
   height: 100px;
-  margin-top: 0px;
+  margin-top: 0;
   margin-bottom: 35px;
   z-index: 10000;
 }
@@ -30,6 +30,7 @@ handsontable .currentCol {
   color: #f0f0f0;
   vertical-align: middle;
   font-family: monospace;
+  padding: 0 20px
 }
 
 /* All headers */
