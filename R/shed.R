@@ -137,10 +137,12 @@ shed <- function(
         .output[] <- lapply(.output, readr::parse_guess)
         write_fun <- write_funs[[input$writeFun]]
         write_fun(.output, path = input$outputFile)
+        message("Saved to ", input$outputFile)
       })
 
       observeEvent(input$btnLoad, {
         try(values[["output"]] <- read_fun()(input$outputFile))
+        message("Loaded ", input$outputFile)
       })
 
       session$onSessionEnded(function() {
@@ -180,11 +182,19 @@ shed2 <- function(
 
 # helpers -----------------------------------------------------------------
 
-shed_read_csv   <- function(path)
-  as.data.frame(readr::read_csv(path, col_names = FALSE))
+shed_read_csv   <- function(path){
+  suppressMessages(
+    as.data.frame(readr::read_csv(path, col_names = FALSE))
+  )
+}
 
-shed_read_csv2  <- function(path)
-  as.data.frame(readr::read_csv2(path, col_names = FALSE))
+
+shed_read_csv2  <- function(path){
+  suppressMessages(
+    as.data.frame(readr::read_csv2(path, col_names = FALSE))
+  )
+}
+
 
 shed_write_csv  <- function(x, path)
   readr::write_excel_csv(x, path, col_names = FALSE)
