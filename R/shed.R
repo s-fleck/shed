@@ -111,7 +111,13 @@ shed <- function(
           output <- as.data.frame(rbind(
             colnames(infile),
             as.matrix(infile)
-          ))
+          ),
+            stringsAsFactors = FALSE)
+
+          if (!all(vapply(output, is.character, logical(1)))) {
+            flog.warn("All columns should be read as character")
+          }
+
         } else {
           output <- read_fun()(infile)
         }
@@ -121,9 +127,6 @@ shed <- function(
 
       output$hot <- renderRHandsontable({
         if (!is.null(values[["output"]])){
-
-          flog.debug(str(values[["output"]]))
-
           rhandsontable(
             values[["output"]],
             readOnly = FALSE,
@@ -134,19 +137,41 @@ shed <- function(
         }
       })
 
+
       observeEvent(input$btnSave, {
         .output <- isolate(values[["output"]] )
-        .output[] <- lapply(.output, readr::parse_guess)
+
+        if (!all(vapply(.output, is.character, logical(1)))) {
+          flog.warn("All columns should be read as character")
+        }
+
         write_fun <- write_funs[[input$writeFun]]
         write_fun(.output, path = input$outputFile)
-        flog.info("Saved to ", input$outputFile)
+        flog.info("Saved to %s", input$outputFile)
       })
 
+
       observeEvent(input$btnLoad, {
-        try(values[["output"]] <- read_fun()(input$outputFile))
-        str(values[["output"]])
-        flog.info("Loaded ", input$outputFile)
+
+        if (file.exists(input$outputFile)){
+          tryCatch({
+            values[["output"]] <- read_fun()(input$outputFile)
+            flog.info("Loaded %s", input$outputFile)
+          },
+            error = function(...) {
+              flog.error("Input file exists but cannot be read %s", input$outputFile)
+            }
+          )
+
+        } else {
+          flog.error("Input file does not exist: %s", input$outputFile)
+        }
+
+        if (!all(vapply(values[["output"]], is.character, logical(1)))) {
+          flog.warn("All columns should be read as character")
+        }
       })
+
 
       session$onSessionEnded(function() {
         stopApp(isolate(values[["output"]]))
@@ -190,7 +215,7 @@ shed_read_csv   <- function(path){
     readr::read_csv(
       path,
       col_names = FALSE,
-      col_types = cols(.default = "c"))
+      col_types = readr::cols(.default = "c"))
     )
   )
 
