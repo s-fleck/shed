@@ -137,12 +137,12 @@ shed <- function(
         .output[] <- lapply(.output, readr::parse_guess)
         write_fun <- write_funs[[input$writeFun]]
         write_fun(.output, path = input$outputFile)
-        message("Saved to ", input$outputFile)
+        log_message("Saved to ", input$outputFile)
       })
 
       observeEvent(input$btnLoad, {
         try(values[["output"]] <- read_fun()(input$outputFile))
-        message("Loaded ", input$outputFile)
+        log_message("Loaded ", input$outputFile)
       })
 
       session$onSessionEnded(function() {
