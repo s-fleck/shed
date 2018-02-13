@@ -7,7 +7,11 @@ Maintainer: Stefan Fleck <stefan.b.fleck@gmail.com>
 Description: A minimal csv file editor based on 'shiny' and 'rhandsontable'.
 License: MIT + file LICENSE
 Encoding: UTF-8
-Imports: shiny, rhandsontable, readr, shinythemes
+Imports: 
+  shiny, 
+  rhandsontable, 
+  readr (>= 1.2.0), 
+  shinythemes
 LazyData: true
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 6.0.1.9000
