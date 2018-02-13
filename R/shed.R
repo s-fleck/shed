@@ -98,6 +98,9 @@ shed <- function(
     server = function(input, output, session) {
 
       values <- reactiveValues()
+      read_fun  <- reactive({ read_funs[[input$readFun]] })   #nolint
+      write_fun <- reactive({ write_funs[[input$writeFun]] })   #nolint
+
 
       observe({
         if (!is.null(input$hot)) {
@@ -137,8 +140,7 @@ shed <- function(
       })
 
       observeEvent(input$btnLoad, {
-        read_fun <- read_funs[[input$readFun]]
-        try(values[["output"]] <- read_fun(input$outputFile))
+        try(values[["output"]] <- read_fun()(input$outputFile))
       })
 
       session$onSessionEnded(function() {
@@ -154,6 +156,7 @@ shed <- function(
 
 
 #' @rdname shed
+#' @export
 shed2 <- function(
   infile,
   outfile = make_outfile_name(infile)
@@ -171,146 +174,6 @@ shed2 <- function(
     )
   )
 }
-
-
-
-
-shed_split <- function(
-  infile,
-  outfile = make_outfile_name(infile),
-  write_funs = list(
-    csv  = purrr::partial(readr::write_excel_csv, col_names = FALSE),
-    csv2 = purrr::partial(readr::write_excel_csv2, col_names = FALSE)
-  ),
-  read_funs = list(
-    csv  = purrr::compose(
-      as.data.frame,
-      purrr::partial(readr::read_csv, col_names = FALSE)
-    ),
-    csv2 = purrr::compose(
-      as.data.frame,
-      purrr::partial(readr::read_csv2, col_names = FALSE)
-    )
-  )
-){
-
-  shed_app <- shiny::shinyApp(
-    ui = fluidPage(
-      theme = shinythemes::shinytheme("superhero"),
-      width = "100%",
-      tags$head(tags$style(HTML(theme)) ),
-
-      fixedPanel(
-        id = "panelTop",
-        top = 0,
-        left = 0,
-        right = 0,
-        textInput("outputFile", NULL, outfile, width = "100%"),
-
-        div(
-          style = "display: inline-block;vertical-align:top;",
-          actionButton("btnLoad", "load", style = "padding:6px; font-size:90%", width = 80)),  #nolint
-
-        div(
-          style = "display: inline-block;vertical-align:top;width:130px",
-          selectInput(
-            "readFun",
-            NULL,
-            names(read_funs),
-            width = 80
-          )
-        ),
-
-        div(
-          style = "display: inline-block;vertical-align:top;height:30px",
-          actionButton("btnSave", "save", style = "padding:6px; font-size:90%", width = 80)),  #nolint
-        div(
-          style = "display: inline-block;vertical-align:top;width:130px",
-          selectInput(
-            "writeFun",
-            NULL,
-            names(write_funs),
-            width = 80
-          )
-        )
-      ),
-
-      absolutePanel(
-        top = 200,
-        left = 0,
-        right = 0,
-        splitLayout(
-          rHandsontableOutput("hot"),
-          verbatimTextOutput("text")
-        )
-      )
-    ),
-
-
-    server = function(input, output, session) {
-
-      values    <- reactiveValues()
-      read_fun  <- reactive({ read_funs[[input$readFun]] })   #nolint
-      write_fun <- reactive({ write_funs[[input$writeFun]] })   #nolint
-
-      observe({
-        if (!is.null(input$hot)) {
-          values[["previous"]] <- isolate(values[["output"]])
-          output <- hot_to_r(input$hot)
-        } else if (!is.null(values[["output"]])) {
-          output <- values[["output"]]
-        } else if (is.data.frame(infile)) {
-          output <- as.data.frame(rbind(
-            colnames(infile),
-            as.matrix(infile)
-          ))
-          output_text <- ""
-        } else {
-          output <- read_fun()(infile)
-        }
-
-        values[["output"]] <- output
-      })
-
-
-      output$hot <- renderRHandsontable({
-        if (!is.null(values[["output"]])){
-          rhandsontable(
-            values[["output"]],
-            readOnly = FALSE,
-            useTypes = FALSE,
-            colHeaders = NULL
-          )  #nolint
-        }
-      })
-
-      output_text <- reactive({
-        try(paste(values[["output_text"]], collapse = "\n"))
-      })
-
-      output$text <- renderText({ output_text() })  # nolint
-
-      observeEvent(input$btnSave, {
-        .output <- isolate(values[["output"]] )
-        .output[] <- lapply(.output, readr::parse_guess)
-        write_fun()(.output, path = input$outputFile)
-        values[["output_text"]] <- readLines(input$outputFile)
-      })
-
-      observeEvent(input$btnLoad, {
-        try(values[["output"]] <- read_fun()(file = input$outputFile))
-        try(values[["output_text"]] <- readLines(input$outputFile))
-      })
-
-      session$onSessionEnded(function() {
-        stopApp(isolate(values[["output"]]))
-      })
-    }
-  )
-
-  invisible(runApp(shed_app))
-}
-
 
 
 
