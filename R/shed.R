@@ -101,7 +101,6 @@ shed <- function(
       read_fun  <- reactive({ read_funs[[input$readFun]] })   #nolint
       write_fun <- reactive({ write_funs[[input$writeFun]] })   #nolint
 
-
       observe({
         if (!is.null(input$hot)) {
           values[["previous"]] <- isolate(values[["output"]])
@@ -122,6 +121,9 @@ shed <- function(
 
       output$hot <- renderRHandsontable({
         if (!is.null(values[["output"]])){
+
+          flog.debug(str(values[["output"]]))
+
           rhandsontable(
             values[["output"]],
             readOnly = FALSE,
@@ -137,12 +139,13 @@ shed <- function(
         .output[] <- lapply(.output, readr::parse_guess)
         write_fun <- write_funs[[input$writeFun]]
         write_fun(.output, path = input$outputFile)
-        log_message("Saved to ", input$outputFile)
+        flog.info("Saved to ", input$outputFile)
       })
 
       observeEvent(input$btnLoad, {
         try(values[["output"]] <- read_fun()(input$outputFile))
-        log_message("Loaded ", input$outputFile)
+        str(values[["output"]])
+        flog.info("Loaded ", input$outputFile)
       })
 
       session$onSessionEnded(function() {
@@ -183,16 +186,28 @@ shed2 <- function(
 # helpers -----------------------------------------------------------------
 
 shed_read_csv   <- function(path){
-  suppressMessages(
-    as.data.frame(readr::read_csv(path, col_names = FALSE))
+  suppressMessages(as.data.frame(
+    readr::read_csv(
+      path,
+      col_names = FALSE,
+      col_types = cols(.default = "c"))
+    )
   )
+
 }
 
 
 shed_read_csv2  <- function(path){
-  suppressMessages(
-    as.data.frame(readr::read_csv2(path, col_names = FALSE))
-  )
+  res <- suppressMessages(as.data.frame(
+      readr::read_csv2(
+        path,
+        col_names = FALSE,
+        col_types = cols(.default = "c")
+      )
+  ))
+
+  str(res)
+
 }
 
 

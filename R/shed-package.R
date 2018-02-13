@@ -1,4 +1,4 @@
 #' @keywords internal
-#' @import shiny rhandsontable
+#' @import shiny rhandsontable futile.logger
 #' @noRd
 "_PACKAGE"
