@@ -57,7 +57,6 @@ shed <- function(
 
   shed_app <- shiny::shinyApp(
     ui = fluidPage(
-      theme = shinythemes::shinytheme("superhero"),
       width = "100%",
       tags$head(tags$style(HTML(theme)) ),
 
@@ -69,20 +68,23 @@ shed <- function(
         textInput("outputFile", NULL, outfile, width = "100%"),
 
         div(
-          style = "display: inline-block;vertical-align:top;",
-          actionButton("btnLoad", "load", style="padding:6px; font-size:90%", width = 80)),  #nolint
-
-        div(
-          style = "display: inline-block;vertical-align:top;width:130px",
-          selectInput("readFun", NULL, names(read_funs), width = 80)
+          class = "shedCtrl",
+          actionButton("btnLoad", "load", class = "shedCtrlButton")
         ),
 
         div(
-          style = "display: inline-block;vertical-align:top;height:30px",
-          actionButton("btnSave", "save", style = "padding:6px; font-size:90%", width = 80)), #nolint
+          class = "shedCtrl",
+          selectInput("readFun", NULL, names(read_funs))
+        ),
+
         div(
-          style = "display: inline-block;vertical-align:top;width:130px",
-          selectInput("writeFun", NULL, names(write_funs), width = 80)
+          class = "shedCtrl",
+          actionButton("btnSave", "save", class = "shedCtrlButton")
+        ),
+
+        div(
+          class = "shedCtrl",
+          selectInput("writeFun", NULL, names(write_funs))
         )
       ),
 

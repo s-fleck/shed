@@ -3,12 +3,58 @@ body {
 }
 
 #panelTop {
-  background: #bbbbbb;
+  background-color: #181712;
+  color: #757571;
   height: 100px;
   margin-top: 0;
   margin-bottom: 35px;
   z-index: 10000;
 }
+
+#outputFile{
+  background-color: #181712;
+  color: #757571;
+}
+
+
+.shedCtrl {
+  display: inline-block;
+  vertical-align:top;
+  width: 80;
+}
+
+.shedCtrlButton {
+  background-color: #181712;
+  color: #757571;
+  font-size:90%;
+  width: 80px;
+  height: 34px;
+}
+
+.selectize-input {
+  background-color: #181712!important;
+  color: #757571;
+  font-size:90%;
+  width: 80px;
+  height: 34px;
+}
+
+.selectize-dropdown {
+  background-color: #181712!important;
+  color: #f0f0f0;
+  font-size:90%;
+}
+
+#readFun {
+  background: #757571;
+  font-size:90%;
+  width: 80px;
+  height: 34px;
+}
+
+
+
+
 
 .handsontable {
   overflow: auto;
