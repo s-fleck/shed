@@ -1,0 +1,61 @@
+body {
+  background: #000000;
+}
+
+#panelTop {
+  background: #bbbbbb;
+  height: 100px;
+  margin-top: 0px;
+  margin-bottom: 35px;
+  z-index: 10000;
+}
+
+.handsontable {
+  overflow: auto;
+}
+
+handsontable .currentRow {
+  background-color: #E7E8EF;
+}
+
+handsontable .currentCol {
+  background-color: #F9F9FB;
+}
+
+
+/* Master */
+
+#hot tr td {
+  background-color: #181712;
+  color: #f0f0f0;
+  vertical-align: middle;
+  font-family: monospace;
+}
+
+/* All headers */
+#hot .handsontable th {
+  background-color: #000000;
+  color: #757571;
+  vertical-align: middle;
+}
+
+/* Context Menue */
+.htMenu tr td {
+  color: #2b3e50;
+}
+
+/* Borders (data) */
+#hot .ht_master tr > td {
+  border-bottom: 1px solid #000000!important;
+  border-right: 0px solid #000000!important;
+  border-top: 0px solid #000000!important;
+  border-left: 0px solid #000000!important;
+}
+
+/* Borders (row numbers) */
+#hot .ht_clone_left th {
+  border-bottom: 1px solid #000000!important;
+  border-right: 0px solid #000000!important;
+  border-top: 0px solid #000000!important;
+  border-left: 0px solid #000000!important;
+}

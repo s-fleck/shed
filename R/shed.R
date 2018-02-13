@@ -4,7 +4,7 @@
 #' @param outfile Output file path
 #' @param write_funs write functions
 #' @param read_funs read functions
-#' @param options Options to configure behaviour and appearence of the shed
+#' @param opts Options to configure behaviour and appearence of the shed
 #'   app (see below)
 #'
 #'
@@ -37,22 +37,21 @@ shed <- function(
     csv  = shed_read_csv,
     csv2 = shed_read_csv2
   ),
-  options = list(
+  opts = list(
+    css = system.file("css", "shed_dark.css", package = "shed"),
     font_size = getOption("shed.font_size", 16)
   )
 ){
+  # preconditions
+  stopifnot(is_scalar_integerish(opts$font_size))
+  stopifnot(is_css_file(opts$css))
+  stopifnot(is_scalar_character(infile) || is.data.frame(infile))
+  stopifnot(is_scalar_character(outfile))
 
   # init
-  css <- paste(
-    shinycsv_css,
-    sprintf(
-    "
-      #hot tr td {
-        font-size: %spx;
-      }
-    ",
-      options$font_size
-    )
+  theme <- paste(
+    paste(readLines(opts$css), collapse = "\n"),
+    sprintf("#hot tr td { font-size: %spx;  }", opts$font_size)
   )
 
 
@@ -60,9 +59,7 @@ shed <- function(
     ui = fluidPage(
       theme = shinythemes::shinytheme("superhero"),
       width = "100%",
-      tags$head(
-        tags$style(HTML(css))
-      ),
+      tags$head(tags$style(HTML(theme)) ),
 
       fixedPanel(
         id = "panelTop",
@@ -121,13 +118,13 @@ shed <- function(
       })
 
       output$hot <- renderRHandsontable({
-        if(!is.null(values[["output"]])){
+        if (!is.null(values[["output"]])){
           rhandsontable(
             values[["output"]],
             readOnly = FALSE,
             useTypes = FALSE,
             colHeaders = NULL,
-            rowHeights = options$font_size + 20
+            rowHeights = opts$font_size + 20
           )
         }
       })
@@ -201,9 +198,7 @@ shed_split <- function(
     ui = fluidPage(
       theme = shinythemes::shinytheme("superhero"),
       width = "100%",
-      tags$head(
-        tags$style(HTML(shinycsv_css))
-      ),
+      tags$head(tags$style(HTML(theme)) ),
 
       fixedPanel(
         id = "panelTop",
@@ -279,7 +274,7 @@ shed_split <- function(
 
 
       output$hot <- renderRHandsontable({
-        if(!is.null(values[["output"]])){
+        if (!is.null(values[["output"]])){
           rhandsontable(
             values[["output"]],
             readOnly = FALSE,
@@ -293,7 +288,7 @@ shed_split <- function(
         try(paste(values[["output_text"]], collapse = "\n"))
       })
 
-      output$text <- renderText({ output_text() })
+      output$text <- renderText({ output_text() })  # nolint
 
       observeEvent(input$btnSave, {
         .output <- isolate(values[["output"]] )
@@ -320,16 +315,19 @@ shed_split <- function(
 
 
 
-
-
-
-
 # helpers -----------------------------------------------------------------
 
-shed_read_csv   <- function(path) as.data.frame(readr::read_csv(path, col_names = FALSE))
-shed_read_csv2  <- function(path) as.data.frame(readr::read_csv2(path, col_names = FALSE))
-shed_write_csv  <- function(x, path) readr::write_excel_csv(x, path, col_names = FALSE)
-shed_write_csv2 <- function(x, path) readr::write_excel_csv2(x, path, col_names = FALSE)
+shed_read_csv   <- function(path)
+  as.data.frame(readr::read_csv(path, col_names = FALSE))
+
+shed_read_csv2  <- function(path)
+  as.data.frame(readr::read_csv2(path, col_names = FALSE))
+
+shed_write_csv  <- function(x, path)
+  readr::write_excel_csv(x, path, col_names = FALSE)
+
+shed_write_csv2 <- function(x, path)
+  readr::write_excel_csv2(x, path, col_names = FALSE)
 
 
 
@@ -341,74 +339,3 @@ make_outfile_name <- function(x){
     tempfile(fileext = ".csv")
   )
 }
-
-
-
-
-# css themes --------------------------------------------------------------
-
-shinycsv_css <-
-"
-    body {
-      background: #000000;
-    }
-
-    #panelTop {
-      background: #bbbbbb;
-      height = 250px;
-      margin-top = 35px;
-      margin-bottom = 35px;
-      z-index: 10000;
-    }
-
-    .handsontable {
-      overflow: auto;
-    }
-
-    handsontable .currentRow {
-      background-color: #E7E8EF;
-    }
-
-    handsontable .currentCol {
-      background-color: #F9F9FB;
-    }
-
-
-  /* Master */
-
-    #hot tr td {
-      background-color: #181712;
-      color: #f0f0f0;
-      vertical-align: middle;
-      font-family: monospace;
-    }
-
-  /* All headers */
-    #hot .handsontable th {
-      background-color: #000000;
-      color: #757571;
-      vertical-align: middle;
-    }
-
-  /* Context Menue */
-    .htMenu tr td {
-      color: #2b3e50;
-    }
-
-  /* Borders (data) */
-    #hot .ht_master tr > td {
-      border-bottom: 1px solid #000000!important;
-      border-right: 0px solid #000000!important;
-      border-top: 0px solid #000000!important;
-      border-left: 0px solid #000000!important;
-    }
-
-  /* Borders (row numbers) */
-    #hot .ht_clone_left th {
-      border-bottom: 1px solid #000000!important;
-      border-right: 0px solid #000000!important;
-      border-top: 0px solid #000000!important;
-      border-left: 0px solid #000000!important;
-    }
-
-"
