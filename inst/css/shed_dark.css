@@ -41,6 +41,7 @@ body {
     font-size:90%;
     width: 90px;
     height: 34px;
+    font-family: monospace;
   }
 
   .shedDropdownContainer{
@@ -50,6 +51,7 @@ body {
   .selectize-input {
     background-color: #323232!important;
     font-size:90%;
+    font-family: monospace;
     width: 80px;
     height: 34px;
     color: #fdce5e;

@@ -39,7 +39,7 @@ shed <- function(
   ),
   opts = list(
     css = system.file("css", "shed_dark.css", package = "shed"),
-    font_size = getOption("shed.font_size", 16)
+    font_size = getOption("shed.font_size", 14)
   )
 ){
   # preconditions
@@ -151,13 +151,23 @@ shed <- function(
 
       observeEvent(input$btnLoad, {
 
+        read_fun <- isolate(read_fun())
+
         if (file.exists(input$outputFile)){
           tryCatch({
-            values[["output"]] <- read_fun()(input$outputFile)
+            .output <- read_fun(input$outputFile)
+
+            flog.debug(
+              "Loaded data.frame with structure \n\n %s",
+              paste(capture.output(str(.output )), collapse = "\n")
+            )
+
             flog.info("Loaded %s", input$outputFile)
+            values[["output"]] <- .output
           },
-            error = function(...) {
+            error = function(e) {
               flog.error("Input file exists but cannot be read %s", input$outputFile)
+              flog.error("Reason: %s", e)
             }
           )
 
@@ -225,12 +235,9 @@ shed_read_csv2  <- function(path){
       readr::read_csv2(
         path,
         col_names = FALSE,
-        col_types = cols(.default = "c")
+        col_types = readr::cols(.default = "c")
       )
   ))
-
-  str(res)
-
 }
 
 
