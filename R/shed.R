@@ -68,25 +68,21 @@ shed <- function(
         textInput("outputFile", NULL, outfile, width = "100%"),
 
         div(
-          class = "shedCtrl",
-          actionButton("btnLoad", "load", class = "shedCtrlButton")
-        ),
+          style = "display: inline-block;",
+          actionButton("btnLoad", "load", class = "shedButton shedCtrlElement"),
 
-        div(
-          class = "shedCtrl",
-          selectInput("readFun", NULL, names(read_funs))
-        ),
+          div(
+            class = "shedDropdownContainer",
+            selectInput("readFun", NULL, names(read_funs))
+          ),
 
-        div(
-          class = "shedCtrl",
-          actionButton("btnSave", "save", class = "shedCtrlButton")
-        ),
+          actionButton("btnSave", "save", class = "shedButton shedCtrlElement"),
 
-        div(
-          class = "shedCtrl",
-          selectInput("writeFun", NULL, names(write_funs))
-        )
-      ),
+          div(
+            class = "shedDropdownContainer",
+            selectInput("writeFun", NULL, names(write_funs))
+          )
+        )),
 
       absolutePanel(
         rHandsontableOutput("hot"),
