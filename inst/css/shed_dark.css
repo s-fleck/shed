@@ -14,19 +14,36 @@ body {
 /* Control Panel */
 
   #panelTop {
-    background-color: #3b3b3b;
-    height: 100px;
+    background-color: #424242;
+    height: 120px;
     margin-top: 0;
     margin-bottom: 35px;
     z-index: 10000;
     border: #000000;
   }
 
+
+  .shedInfileContainer {
+    margin-top: 12px;
+    margin-left: 6px;
+    margin-right: 12px;
+  }
+
   #outputFile{
     background-color: #323232;
     border: #181712;
     color: #fdce5e;
+    width: 100%;
     font-family: monospace;
+  }
+
+
+
+  .shedCtrl {
+    display: inline-block;
+    margin-top: 12px;
+    margin-left: 6px;
+    margin-right: 6px;
   }
 
   .shedCtrlElement {
@@ -39,13 +56,27 @@ body {
 
   .shedButton {
     font-size:90%;
-    width: 90px;
+    width: 80px;
     height: 34px;
     font-family: monospace;
   }
 
+  .shedButton:hover {
+    color: #fb8578;
+  }
+
+  .shedButton:focus{
+      color: #fb8578;
+   }
+
+  .shedCtrlSpacing {
+    display: inline-block;
+    width: 80px;
+  }
+
   .shedDropdownContainer{
     display: inline-block;
+    width: 80px;
   }
 
   .selectize-input {
@@ -57,6 +88,14 @@ body {
     color: #fdce5e;
     border: #000000;
   }
+
+   .selectize-input:hover{
+      color: #fb8578;
+   }
+
+   .selectize-input:focus{
+      color: #fb8578;
+   }
 
   .selectize-dropdown {
     background-color: #fdce5e!important;
