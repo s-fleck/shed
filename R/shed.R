@@ -2,8 +2,6 @@
 #'
 #' @param infile Input file
 #' @param outfile Output file path
-#' @param write_funs write functions
-#' @param read_funs read functions
 #' @param opts Options to configure behaviour and appearence of the shed
 #'   app (see below)
 #'
@@ -29,17 +27,17 @@
 shed <- function(
   infile,
   outfile = make_outfile_name(infile),
-  write_funs = list(
-    csv  = shed_write_csv,
-    csv2 = shed_write_csv2
-  ),
-  read_funs = list(
-    csv  = shed_read_csv,
-    csv2 = shed_read_csv2
-  ),
   opts = list(
     css = system.file("css", "shed_dark.css", package = "shed"),
-    font_size = getOption("shed.font_size", 14)
+    font_size = getOption("shed.font_size", 14),
+    write_funs = list(
+      csv  = shed_write_csv,
+      csv2 = shed_write_csv2
+    ),
+    read_funs = list(
+      csv  = shed_read_csv,
+      csv2 = shed_read_csv2
+    )
   )
 ){
   # preconditions
@@ -79,7 +77,7 @@ shed <- function(
 
           div(
             class = "shedDropdownContainer",
-            selectInput("readFun", NULL, names(read_funs))
+            selectInput("readFun", NULL, names(opts$read_funs))
           ),
 
           div(class = "shedCtrlSpacing"),
@@ -88,7 +86,7 @@ shed <- function(
 
           div(
             class = "shedDropdownContainer",
-            selectInput("writeFun", NULL, names(write_funs))
+            selectInput("writeFun", NULL, names(opts$write_funs))
           )
         )
       ),
@@ -105,8 +103,8 @@ shed <- function(
     server = function(input, output, session) {
 
       values <- reactiveValues()
-      read_fun  <- reactive({ read_funs[[input$readFun]] })   #nolint
-      write_fun <- reactive({ write_funs[[input$writeFun]] })   #nolint
+      read_fun  <- reactive({ opts$read_funs[[input$readFun]] })   #nolint
+      write_fun <- reactive({ opts$write_funs[[input$writeFun]] })   #nolint
 
       observe({
         if (!is.null(input$hot)) {
@@ -152,7 +150,7 @@ shed <- function(
           flog.warn("All columns should be read as character")
         }
 
-        write_fun <- write_funs[[input$writeFun]]
+        write_fun <- opts$write_funs[[input$writeFun]]
         write_fun(.output, path = input$outputFile)
         flog.info("Saved to %s", input$outputFile)
       })
