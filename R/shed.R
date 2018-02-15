@@ -37,7 +37,9 @@ shed <- function(
     read_funs = list(
       csv  = shed_read_csv,
       csv2 = shed_read_csv2
-    )
+    ),
+    read_encoding  = union(c("guess", "UTF-8"), iconvlist()),
+    write_encoding = union("UTF-8", iconvlist())
   )
 ){
   # preconditions
@@ -80,6 +82,11 @@ shed <- function(
             selectInput("readFun", NULL, names(opts$read_funs))
           ),
 
+          div(
+            class = "shedDropdownContainer",
+            selectInput("readEncoding", NULL, opts$read_encoding)
+          ),
+
           div(class = "shedCtrlSpacing"),
 
           actionButton("btnSave", "save", class = "shedButton shedCtrlElement"),
@@ -106,6 +113,9 @@ shed <- function(
       read_fun  <- reactive({ opts$read_funs[[input$readFun]] })   #nolint
       write_fun <- reactive({ opts$write_funs[[input$writeFun]] })   #nolint
 
+
+
+    # I/O ---------------------------------------------------------------------
       observe({
         if (!is.null(input$hot)) {
           values[["previous"]] <- isolate(values[["output"]])
@@ -124,11 +134,12 @@ shed <- function(
           }
 
         } else {
-          output <- read_fun()(infile)
+           output   <- read_fun()(infile, input[["readEncoding"]])
         }
 
-        values[["output"]] <- output
+        values[["output"]]   <- output
       })
+
 
       output$hot <- renderRHandsontable({
         if (!is.null(values[["output"]])){
@@ -143,8 +154,10 @@ shed <- function(
       })
 
 
+
+      # save --------------------------------------------------------------------
       observeEvent(input$btnSave, {
-        .output <- isolate(values[["output"]] )
+        .output   <- isolate(values[["output"]] )
 
         if (!all(vapply(.output, is.character, logical(1)))) {
           flog.warn("All columns should be read as character")
@@ -156,19 +169,16 @@ shed <- function(
       })
 
 
+
+
+      # load --------------------------------------------------------------------
       observeEvent(input$btnLoad, {
 
         read_fun <- isolate(read_fun())
 
         if (file.exists(input$outputFile)){
           tryCatch({
-            .output <- read_fun(input$outputFile)
-
-            flog.debug(
-              "Loaded data.frame with structure \n\n %s",
-              paste(capture.output(str(.output )), collapse = "\n")
-            )
-
+            .output <- read_fun(input$outputFile, encoding = input[["readEncoding"]])
             flog.info("Loaded %s", input$outputFile)
             values[["output"]] <- .output
           },
@@ -225,26 +235,56 @@ shed2 <- function(
 
 # helpers -----------------------------------------------------------------
 
-shed_read_csv   <- function(path){
-  suppressMessages(as.data.frame(
+shed_read_csv   <- function(path, encoding){
+
+  flog.debug("Reading file %s with encoding %s", path, encoding)
+
+  if (encoding == "guess"){
+    encoding <- guess_encoding2(path)
+  }
+
+  loc <- readr::locale(encoding = encoding)
+
+  res <- suppressMessages(as.data.frame(
     readr::read_csv(
       path,
       col_names = FALSE,
-      col_types = readr::cols(.default = "c"))
+      col_types = readr::cols(.default = "c")),
+      locale = loc
     )
   )
 
+  mostattributes(res) <- NULL
+  flog.trace("Loaded data.frame: \n%s", to_string(res))
+  res
 }
 
 
-shed_read_csv2  <- function(path){
+
+
+shed_read_csv2  <- function(path, encoding){
+
+  flog.debug("Reading file %s with encoding %s", path, encoding)
+
+  if (encoding == "guess"){
+    encoding <- guess_encoding2(path)
+  }
+
+  loc <- readr::locale(encoding = encoding)
+
   res <- suppressMessages(as.data.frame(
       readr::read_csv2(
         path,
         col_names = FALSE,
-        col_types = readr::cols(.default = "c")
-      )
+        col_types = readr::cols(.default = "c"),
+      locale = loc
+    )
   ))
+
+  mostattributes(res) <- NULL
+
+  flog.trace("Loaded data.frame: \n%s", to_string(res))
+  res
 }
 
 
@@ -264,3 +304,27 @@ make_outfile_name <- function(x){
     tempfile(fileext = ".csv")
   )
 }
+
+
+
+guess_encoding2 <- function(path, default = "UTF-8"){
+  dd <- readr::guess_encoding(path)
+
+  if (nrow(encoding) > 0){
+    res <- dd[[1, 1]]
+    flog.debug("Guessed Encoding: %s", res)
+  } else {
+    res <- default
+    flog.debug("Could not determine encoding. Falling back to %s", default)
+  }
+
+  res
+}
+
+
+
+to_string <- function(x){
+  paste(capture.output(print(x)), collapse = "\n")
+}
+
+
