@@ -170,7 +170,6 @@ shed <- function(
 
 
 
-
       # load --------------------------------------------------------------------
       observeEvent(input$btnLoad, {
 
@@ -245,14 +244,13 @@ shed_read_csv   <- function(path, encoding){
 
   loc <- readr::locale(encoding = encoding)
 
-  res <- suppressMessages(as.data.frame(
+  res <- as.data.frame(
     readr::read_csv(
       path,
       col_names = FALSE,
       col_types = readr::cols(.default = "c")),
       locale = loc
     )
-  )
 
   mostattributes(res) <- NULL
   flog.trace("Loaded data.frame: \n%s", to_string(res))
@@ -310,7 +308,7 @@ make_outfile_name <- function(x){
 guess_encoding2 <- function(path, default = "UTF-8"){
   dd <- readr::guess_encoding(path)
 
-  if (nrow(encoding) > 0){
+  if (nrow(dd) > 0){
     res <- dd[[1, 1]]
     flog.debug("Guessed Encoding: %s", res)
   } else {
