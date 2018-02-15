@@ -94,6 +94,11 @@ shed <- function(
           div(
             class = "shedDropdownContainer",
             selectInput("writeFun", NULL, names(opts$write_funs))
+          ),
+
+          div(
+            class = "shedDropdownContainer",
+            shiny::checkboxInput("chkOverwrite", "overwrite", value = FALSE)
           )
         )
       ),
@@ -159,6 +164,17 @@ shed <- function(
       observeEvent(input$btnSave, {
         .output   <- isolate(values[["output"]] )
 
+
+        if (file.exists(outfile)){
+          showModal(shiny::modalDialog(
+            title = "Overwrite?",
+            size = "s",
+            shiny::actionButton("modalOverwriteYes", "Yes"),
+            shiny::actionButton("modalOverwriteNo", "No"),
+            footer = NULL
+          ))
+        }
+
         if (!all(vapply(.output, is.character, logical(1)))) {
           flog.warn("All columns should be read as character")
         }
@@ -167,6 +183,21 @@ shed <- function(
         write_fun(.output, path = input$outputFile)
         flog.info("Saved to %s", input$outputFile)
       })
+
+
+
+      # Overwrite Modal ---------------------------------------------------------
+      observeEvent(input$modalOverwriteYes,{
+        print("overwrite yes")
+        removeModal()
+      })
+
+      observeEvent(input$modalOverwriteNo,{
+        print("overwrite no")
+        removeModal()
+      })
+
+
 
 
 
