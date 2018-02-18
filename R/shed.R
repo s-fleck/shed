@@ -56,7 +56,13 @@ shed <- function(
   shed_app <- shiny::shinyApp(
     ui = fluidPage(
       width = "100%",
-      tags$head(tags$style(HTML(theme)) ),
+      tags$head(
+        tags$style(HTML(theme)),
+        tags$script(HTML(
+          js_add_ctrl_hotkey("$('#btnSave').click()", key = c(83))
+        ))
+      ),
+
 
       fixedPanel(
         id = "panelTop",
@@ -263,4 +269,31 @@ make_outfile_name <- function(x){
     x,
     tempfile(fileext = ".csv")
   )
+}
+
+
+
+#' Title
+#'
+#' @param command
+#' @param keys `integer` vector of Keycode numbers, see
+#'   http://keycode.info
+#'
+#' @return `character` java script code
+js_add_ctrl_hotkey <- function(command = 'console.log("pressed")', key){
+  stopifnot(length(key) == 1)
+
+  sprintf(
+  "
+  $(document).keydown(function(e) {
+    if (e.keyCode == %s && e.ctrlKey) {
+      e.preventDefault();
+      %s;
+    }
+  });
+  ",
+  key,
+  command
+  )
+
 }
