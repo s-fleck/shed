@@ -29,10 +29,17 @@ body {
     margin-right: 12px;
   }
 
+  .infileSaved #outputFile{
+    color: #fdce5e!important;
+  }
+
+  .infileNotSaved #outputFile {
+    color: #fb8578!important;
+  }
+
   #outputFile{
     background-color: #323232;
     border: #181712;
-    color: #fdce5e;
     width: 100%;
     font-family: monospace;
   }

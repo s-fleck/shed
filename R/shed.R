@@ -72,7 +72,7 @@ shed <- function(
 
         div(
           class = "shedInfileContainer",
-          textInput("outputFile", NULL, outfile, width = "100%")
+          uiOutput("uiInfile")
         ),
 
 
@@ -112,28 +112,49 @@ shed <- function(
       read_fun  <- reactive({ opts$read_funs[[input$readFun]] })   #nolint
       write_fun <- reactive({ opts$write_funs[[input$writeFun]] })   #nolint
 
+
+      output$uiInfile <- renderUI({
+        if (isTRUE(values[["modified"]])){
+          div(textInput("outputFile", NULL, outfile, width = "100%"), class = "infileNotSaved")
+        } else {
+          div(textInput("outputFile", NULL, outfile, width = "100%"), class = "infileSaved")
+        }
+      })
+
       observe({
+
         if (!is.null(input$hot)) {
-          values[["previous"]] <- isolate(values[["output"]])
-          output <- hot_to_r(input$hot)
+          flog.trace("Loading data.frame from HOT")
+          .output   <- hot_to_r(input$hot)
         } else if (!is.null(values[["output"]])) {
-          output <- values[["output"]]
+          flog.trace("Loading data.frame from output")
+          .output <- values[["output"]]
         } else if (is.data.frame(infile)) {
-          output <- as.data.frame(rbind(
+          flog.trace("Loading data.frame from input data.frame")
+          .output <- as.data.frame(rbind(
             colnames(infile),
             as.matrix(infile)
           ),
-            stringsAsFactors = FALSE)
+            stringsAsFactors = FALSE
+          )
 
-          if (!all(vapply(output, is.character, logical(1)))) {
+          if (!all(vapply(.output, is.character, logical(1)))) {
             flog.warn("All columns should be read as character")
           }
 
         } else {
-          output <- read_fun()(infile)
+          flog.trace("Loading data.frame from input file")
+          .output <- read_fun()(infile)
+          values[["output_saved"]] <- .output
         }
 
-        values[["output"]] <- output
+
+        values[["modified"]] <- !isTRUE(all.equal(
+          try(unname(as.matrix(values[["output_saved"]])), silent = TRUE),
+          unname(as.matrix(.output))
+        ))
+
+        values[["output"]]   <- .output
       })
 
       output$hot <- renderRHandsontable({
@@ -158,6 +179,8 @@ shed <- function(
 
         write_fun <- opts$write_funs[[input$writeFun]]
         write_fun(.output, path = input$outputFile)
+        values[["output_saved"]] <- .output
+        values[["modified"]] <- FALSE
         flog.info("Saved to %s", input$outputFile)
       })
 
@@ -177,6 +200,7 @@ shed <- function(
 
             flog.info("Loaded %s", input$outputFile)
             values[["output"]] <- .output
+            values[["output_saved"]] <- .output
           },
             error = function(e) {
               flog.error("Input file exists but cannot be read %s", input$outputFile)
