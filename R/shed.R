@@ -239,14 +239,19 @@ shed2 <- function(
   shed(
     infile = infile,
     outfile = outfile,
-    write_funs = list(
-      csv2 = shed_write_csv2,
-      csv  = shed_write_csv
-    ),
-    read_funs = list(
-      csv2 = shed_read_csv2,
-      csv  = shed_read_csv
+    opts = list(
+      css = system.file("css", "shed_dark.css", package = "shed"),
+      font_size = getOption("shed.font_size", 14),
+      write_funs = list(
+        csv2 = shed_write_csv2,
+        csv  = shed_write_csv
+      ),
+      read_funs = list(
+        csv2 = shed_read_csv2,
+        csv  = shed_read_csv
+      )
     )
+
   )
 }
 
@@ -279,10 +284,10 @@ shed_read_csv2  <- function(path){
 
 
 shed_write_csv  <- function(x, path)
-  readr::write_excel_csv(x, path, col_names = FALSE)
+  readr::write_excel_csv(x, path, col_names = FALSE, na = "")
 
 shed_write_csv2 <- function(x, path)
-  readr::write_excel_csv2(x, path, col_names = FALSE)
+  readr::write_excel_csv2(x, path, col_names = FALSE, na = "")
 
 
 
