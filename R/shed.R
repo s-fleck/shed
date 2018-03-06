@@ -45,7 +45,10 @@ shed <- function(
   # preconditions
   stopifnot(is_scalar_integerish(opts$font_size))
   stopifnot(is_css_file(opts$css))
-  stopifnot(is_scalar_character(infile) || is.data.frame(infile))
+  stopifnot(
+    (is_scalar_character(infile) && file.exists(infile)) ||
+    (is.data.frame(infile))
+  )
   stopifnot(is_scalar_character(outfile))
 
   # init
@@ -58,7 +61,13 @@ shed <- function(
   shed_app <- shiny::shinyApp(
     ui = fluidPage(
       width = "100%",
-      tags$head(tags$style(HTML(theme)) ),
+      tags$head(
+        tags$style(HTML(theme)),
+        tags$script(HTML(
+          js_add_ctrl_hotkey("$('#btnSave').click()", key = c(83))
+        ))
+      ),
+
 
       fixedPanel(
         id = "panelTop",
@@ -68,7 +77,7 @@ shed <- function(
 
         div(
           class = "shedInfileContainer",
-          textInput("outputFile", NULL, outfile, width = "100%")
+          uiOutput("uiInfile")
         ),
 
 
@@ -119,30 +128,48 @@ shed <- function(
       write_fun <- reactive({ opts$write_funs[[input$writeFun]] })   #nolint
 
 
-
     # I/O ---------------------------------------------------------------------
+      output$uiInfile <- renderUI({
+        if (isTRUE(values[["modified"]])){
+          div(textInput("outputFile", NULL, outfile, width = "100%"), class = "infileNotSaved")
+        } else {
+          div(textInput("outputFile", NULL, outfile, width = "100%"), class = "infileSaved")
+        }
+      })
+
+
       observe({
+
         if (!is.null(input$hot)) {
-          values[["previous"]] <- isolate(values[["output"]])
-          output <- hot_to_r(input$hot)
+          flog.trace("Loading data.frame from HOT")
+          .output   <- hot_to_r(input$hot)
         } else if (!is.null(values[["output"]])) {
-          output <- values[["output"]]
+          flog.trace("Loading data.frame from output")
+          .output <- values[["output"]]
         } else if (is.data.frame(infile)) {
-          output <- as.data.frame(rbind(
+          flog.trace("Loading data.frame from input data.frame")
+          .output <- as.data.frame(rbind(
             colnames(infile),
             as.matrix(infile)
           ),
-            stringsAsFactors = FALSE)
+            stringsAsFactors = FALSE
+          )
 
-          if (!all(vapply(output, is.character, logical(1)))) {
+          if (!all(vapply(.output, is.character, logical(1)))) {
             flog.warn("All columns should be read as character")
           }
 
         } else {
-           output   <- read_fun()(infile, input[["readEncoding"]])
+            flog.trace("Loading data.frame from input file")
+            .output <- read_fun()(infile, input[["readEncoding"]])
         }
 
-        values[["output"]]   <- output
+        values[["output"]]   <- .output
+
+        values[["modified"]] <- !isTRUE(all.equal(
+          try(unname(as.matrix(values[["output_saved"]])), silent = TRUE),
+          unname(as.matrix(.output))
+        ))
       })
 
 
@@ -181,6 +208,8 @@ shed <- function(
 
         write_fun <- opts$write_funs[[input$writeFun]]
         write_fun(.output, path = input$outputFile)
+        values[["output_saved"]] <- .output
+        values[["modified"]] <- FALSE
         flog.info("Saved to %s", input$outputFile)
       })
 
@@ -211,6 +240,7 @@ shed <- function(
             .output <- read_fun(input$outputFile, encoding = input[["readEncoding"]])
             flog.info("Loaded %s", input$outputFile)
             values[["output"]] <- .output
+            values[["output_saved"]] <- .output
           },
             error = function(e) {
               flog.error("Input file exists but cannot be read %s", input$outputFile)
@@ -249,13 +279,17 @@ shed2 <- function(
   shed(
     infile = infile,
     outfile = outfile,
-    write_funs = list(
-      csv2 = shed_write_csv2,
-      csv  = shed_write_csv
-    ),
-    read_funs = list(
-      csv2 = shed_read_csv2,
-      csv  = shed_read_csv
+    opts = list(
+      css = system.file("css", "shed_dark.css", package = "shed"),
+      font_size = getOption("shed.font_size", 14),
+      write_funs = list(
+        csv2 = shed_write_csv2,
+        csv  = shed_write_csv
+      ),
+      read_funs = list(
+        csv2 = shed_read_csv2,
+        csv  = shed_read_csv
+      )
     )
   )
 }
@@ -318,10 +352,10 @@ shed_read_csv2  <- function(path, encoding){
 
 
 shed_write_csv  <- function(x, path)
-  readr::write_excel_csv(x, path, col_names = FALSE)
+  readr::write_excel_csv(x, path, col_names = FALSE, na = "")
 
 shed_write_csv2 <- function(x, path)
-  readr::write_excel_csv2(x, path, col_names = FALSE)
+  readr::write_excel_csv2(x, path, col_names = FALSE, na = "")
 
 
 
@@ -357,3 +391,27 @@ to_string <- function(x){
 }
 
 
+#' Title
+#'
+#' @param command
+#' @param keys `integer` vector of Keycode numbers, see
+#'   http://keycode.info
+#'
+#' @return `character` java script code
+js_add_ctrl_hotkey <- function(command = 'console.log("pressed")', key){
+  stopifnot(length(key) == 1)
+
+  sprintf(
+  "
+  $(document).keydown(function(e) {
+    if (e.keyCode == %s && e.ctrlKey) {
+      e.preventDefault();
+      %s;
+    }
+  });
+  ",
+  key,
+  command
+  )
+
+}
