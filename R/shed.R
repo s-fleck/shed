@@ -142,42 +142,60 @@ shed <- function(
       })
 
 
+    # Startup -----------------------------------------------------------------
       observe({
+        flog.debug("Trigger App Startup")
 
-        if (!is.null(input$hot)) {
-          flog.trace("Loading data.frame from HOT")
-          .output   <- hot_to_r(input$hot)
-        } else if (!is.null(values[["output"]])) {
-          flog.trace("Loading data.frame from output")
-          .output <- values[["output"]]
-        } else if (is.data.frame(infile)) {
-          flog.trace("Loading data.frame from input data.frame")
+        if (is.data.frame(infile)) {
+          flog.trace("Loading data from input data.frame")
           .output <- as.data.frame(rbind(
-            colnames(infile),
-            as.matrix(infile)
-          ),
-            stringsAsFactors = FALSE
-          )
-
+          colnames(infile),
+          as.matrix(infile)
+        ),
+          stringsAsFactors = FALSE
+        )
           if (!all(vapply(.output, is.character, logical(1)))) {
             flog.warn("All columns should be read as character")
           }
-
         } else {
-            flog.trace("Loading data.frame from input file")
-            .output <- read_fun()(infile, input[["readEncoding"]])
+          read <- read_fun()
+          .output <- read(input$outputFile, encoding = input[["readEncoding"]])
         }
 
         values[["output"]]   <- .output
+        rm(.output)
+      })
 
-        values[["modified"]] <- !isTRUE(all.equal(
-          try(unname(as.matrix(values[["output_saved"]])), silent = TRUE),
-          unname(as.matrix(.output))
-        ))
+
+      observe({
+        if (!is.null(values[["output"]])) {
+          flog.trace("Loading data.frame from reactive value")
+          .output <- values[["output"]]
+
+          values[["output"]]   <- .output
+
+          values[["modified"]] <- !isTRUE(all.equal(
+            try(unname(as.matrix(values[["output_saved"]])), silent = TRUE),
+            unname(as.matrix(.output))
+          ))
+        } else if (!is.null(input$hot)) {
+          flog.trace("Loading data.frame from HOT")
+          .output <- hot_to_r(input$hot)
+
+          values[["output"]]   <- .output
+          values[["modified"]] <- !isTRUE(all.equal(
+            try(unname(as.matrix(values[["output_saved"]])), silent = TRUE),
+            unname(as.matrix(.output))
+          ))
+        }
       })
 
 
       output$hot <- renderRHandsontable({
+        flog.trace("Trigger HOT display update")
+
+        print(head(values[["output"]]))
+
         if (!is.null(values[["output"]])){
           rhandsontable(
             values[["output"]],
@@ -193,10 +211,14 @@ shed <- function(
 
       # save --------------------------------------------------------------------
       observeEvent(input$btnSave, {
+        flog.trace("Trigger Save Button")
+
         .output   <- isolate(values[["output"]] )
 
 
         if (file.exists(outfile)){
+          flog.trace("Trigger Overwrite Modal")
+
           showModal(shiny::modalDialog(
             title = "Overwrite?",
             size = "s",
@@ -221,12 +243,12 @@ shed <- function(
 
       # Overwrite Modal ---------------------------------------------------------
       observeEvent(input$modalOverwriteYes,{
-        print("overwrite yes")
+        flog.debug("overwrite yes")
         removeModal()
       })
 
       observeEvent(input$modalOverwriteNo,{
-        print("overwrite no")
+        flog.debug("overwrite no")
         removeModal()
       })
 
@@ -236,13 +258,14 @@ shed <- function(
 
       # load --------------------------------------------------------------------
       observeEvent(input$btnLoad, {
+        flog.trace("Trigger Load Button")
 
-        read_fun <- isolate(read_fun())
+        read <- isolate(read_fun())
 
         if (file.exists(input$outputFile)){
           tryCatch({
-            .output <- read_fun(input$outputFile, encoding = input[["readEncoding"]])
-            flog.info("Loaded %s", input$outputFile)
+            flog.info("Loading data from file system: %s", input$outputFile)
+            .output <- read(input$outputFile, encoding = input[["readEncoding"]])
             values[["output"]] <- .output
             values[["output_saved"]] <- .output
           },
@@ -312,7 +335,7 @@ shed_read_csv   <- function(path, encoding){
     )
 
   mostattributes(res) <- NULL
-  flog.trace("Loaded data.frame: \n%s", to_string(res))
+  flog.trace("Loaded data.frame: \n%s", to_string(head(res)))
   res
 }
 
@@ -340,7 +363,7 @@ shed_read_csv2  <- function(path, encoding){
 
   mostattributes(res) <- NULL
 
-  flog.trace("Loaded data.frame: \n%s", to_string(res))
+  flog.trace("Loaded data.frame: \n%s", to_string(head(res)))
   res
 }
 
@@ -368,7 +391,7 @@ shed_read_tsv  <- function(path, encoding){
 
   mostattributes(res) <- NULL
 
-  flog.trace("Loaded data.frame: \n%s", to_string(res))
+  flog.trace("Loaded data.frame: \n%s", to_string(head(res)))
   res
 }
 

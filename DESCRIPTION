@@ -1,7 +1,7 @@
 Package: shed
 Type: Package
 Title: Shiny CSV Editor
-Version: 0.0.2.9004
+Version: 0.0.2.9005
 Authors@R: person("Stefan", "Fleck", email = "stefan.b.fleck@gmail.com", role = c("aut", "cre"))
 Maintainer: Stefan Fleck <stefan.b.fleck@gmail.com>
 Description: A minimal csv file editor based on 'shiny' and 'rhandsontable'.
