@@ -160,3 +160,11 @@ body {
     border-top: 0px solid #000000!important;
     border-left: 0px solid #000000!important;
   }
+
+
+
+/* misc */
+
+.modal.fade {
+  z-index: 10000000 !important;
+}

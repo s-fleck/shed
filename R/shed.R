@@ -37,13 +37,18 @@ shed <- function(
     read_funs = list(
       csv  = shed_read_csv,
       csv2 = shed_read_csv2
-    )
+    ),
+    read_encoding  = union(c("guess", "UTF-8"), iconvlist()),
+    write_encoding = union("UTF-8", iconvlist())
   )
 ){
   # preconditions
   stopifnot(is_scalar_integerish(opts$font_size))
   stopifnot(is_css_file(opts$css))
-  stopifnot(is_scalar_character(infile) || is.data.frame(infile))
+  stopifnot(
+    (is_scalar_character(infile) && file.exists(infile)) ||
+    (is.data.frame(infile))
+  )
   stopifnot(is_scalar_character(outfile))
 
   # init
@@ -86,6 +91,11 @@ shed <- function(
             selectInput("readFun", NULL, names(opts$read_funs))
           ),
 
+          div(
+            class = "shedDropdownContainer",
+            selectInput("readEncoding", NULL, opts$read_encoding)
+          ),
+
           div(class = "shedCtrlSpacing"),
 
           actionButton("btnSave", "save", class = "shedButton shedCtrlElement"),
@@ -93,6 +103,11 @@ shed <- function(
           div(
             class = "shedDropdownContainer",
             selectInput("writeFun", NULL, names(opts$write_funs))
+          ),
+
+          div(
+            class = "shedDropdownContainer",
+            shiny::checkboxInput("chkOverwrite", "overwrite", value = FALSE)
           )
         )
       ),
@@ -113,6 +128,7 @@ shed <- function(
       write_fun <- reactive({ opts$write_funs[[input$writeFun]] })   #nolint
 
 
+    # I/O ---------------------------------------------------------------------
       output$uiInfile <- renderUI({
         if (isTRUE(values[["modified"]])){
           div(textInput("outputFile", NULL, outfile, width = "100%"), class = "infileNotSaved")
@@ -120,6 +136,7 @@ shed <- function(
           div(textInput("outputFile", NULL, outfile, width = "100%"), class = "infileSaved")
         }
       })
+
 
       observe({
 
@@ -143,19 +160,18 @@ shed <- function(
           }
 
         } else {
-          flog.trace("Loading data.frame from input file")
-          .output <- read_fun()(infile)
-          values[["output_saved"]] <- .output
+            flog.trace("Loading data.frame from input file")
+            .output <- read_fun()(infile, input[["readEncoding"]])
         }
 
+        values[["output"]]   <- .output
 
         values[["modified"]] <- !isTRUE(all.equal(
           try(unname(as.matrix(values[["output_saved"]])), silent = TRUE),
           unname(as.matrix(.output))
         ))
-
-        values[["output"]]   <- .output
       })
+
 
       output$hot <- renderRHandsontable({
         if (!is.null(values[["output"]])){
@@ -170,8 +186,21 @@ shed <- function(
       })
 
 
+
+      # save --------------------------------------------------------------------
       observeEvent(input$btnSave, {
-        .output <- isolate(values[["output"]] )
+        .output   <- isolate(values[["output"]] )
+
+
+        if (file.exists(outfile)){
+          showModal(shiny::modalDialog(
+            title = "Overwrite?",
+            size = "s",
+            shiny::actionButton("modalOverwriteYes", "Yes"),
+            shiny::actionButton("modalOverwriteNo", "No"),
+            footer = NULL
+          ))
+        }
 
         if (!all(vapply(.output, is.character, logical(1)))) {
           flog.warn("All columns should be read as character")
@@ -185,19 +214,30 @@ shed <- function(
       })
 
 
+
+      # Overwrite Modal ---------------------------------------------------------
+      observeEvent(input$modalOverwriteYes,{
+        print("overwrite yes")
+        removeModal()
+      })
+
+      observeEvent(input$modalOverwriteNo,{
+        print("overwrite no")
+        removeModal()
+      })
+
+
+
+
+
+      # load --------------------------------------------------------------------
       observeEvent(input$btnLoad, {
 
         read_fun <- isolate(read_fun())
 
         if (file.exists(input$outputFile)){
           tryCatch({
-            .output <- read_fun(input$outputFile)
-
-            flog.debug(
-              "Loaded data.frame with structure \n\n %s",
-              paste(capture.output(str(.output )), collapse = "\n")
-            )
-
+            .output <- read_fun(input$outputFile, encoding = input[["readEncoding"]])
             flog.info("Loaded %s", input$outputFile)
             values[["output"]] <- .output
             values[["output_saved"]] <- .output
@@ -260,26 +300,55 @@ shed2 <- function(
 
 # helpers -----------------------------------------------------------------
 
-shed_read_csv   <- function(path){
-  suppressMessages(as.data.frame(
+shed_read_csv   <- function(path, encoding){
+
+  flog.debug("Reading file %s with encoding %s", path, encoding)
+
+  if (encoding == "guess"){
+    encoding <- guess_encoding2(path)
+  }
+
+  loc <- readr::locale(encoding = encoding)
+
+  res <- as.data.frame(
     readr::read_csv(
       path,
       col_names = FALSE,
-      col_types = readr::cols(.default = "c"))
+      col_types = readr::cols(.default = "c")),
+      locale = loc
     )
-  )
 
+  mostattributes(res) <- NULL
+  flog.trace("Loaded data.frame: \n%s", to_string(res))
+  res
 }
 
 
-shed_read_csv2  <- function(path){
+
+
+shed_read_csv2  <- function(path, encoding){
+
+  flog.debug("Reading file %s with encoding %s", path, encoding)
+
+  if (encoding == "guess"){
+    encoding <- guess_encoding2(path)
+  }
+
+  loc <- readr::locale(encoding = encoding)
+
   res <- suppressMessages(as.data.frame(
       readr::read_csv2(
         path,
         col_names = FALSE,
-        col_types = readr::cols(.default = "c")
-      )
+        col_types = readr::cols(.default = "c"),
+      locale = loc
+    )
   ))
+
+  mostattributes(res) <- NULL
+
+  flog.trace("Loaded data.frame: \n%s", to_string(res))
+  res
 }
 
 
@@ -300,6 +369,27 @@ make_outfile_name <- function(x){
   )
 }
 
+
+
+guess_encoding2 <- function(path, default = "UTF-8"){
+  dd <- readr::guess_encoding(path)
+
+  if (nrow(dd) > 0){
+    res <- dd[[1, 1]]
+    flog.debug("Guessed Encoding: %s", res)
+  } else {
+    res <- default
+    flog.debug("Could not determine encoding. Falling back to %s", default)
+  }
+
+  res
+}
+
+
+
+to_string <- function(x){
+  paste(capture.output(print(x)), collapse = "\n")
+}
 
 
 #' Title
