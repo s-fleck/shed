@@ -1,6 +1,6 @@
 #' Edit csv Files With Shiny
 #'
-#' @param infile Input file
+#' @param fname Input file
 #' @param outfile Output file path
 #' @param opts Options to configure behaviour and appearence of the shed
 #'   app (see below)
@@ -25,8 +25,7 @@
 #' }
 #'
 shed <- function(
-  infile,
-  outfile = make_outfile_name(infile),
+  file,
   informat = "csv",
   outformat = "csv",
   opts = list(
@@ -50,10 +49,9 @@ shed <- function(
   stopifnot(is_scalar_integerish(opts$font_size))
   stopifnot(is_css_file(opts$css))
   stopifnot(
-    (is_scalar_character(infile) && file.exists(infile)) ||
-    (is.data.frame(infile))
+    (is_scalar_character(file) && file.exists(file)) ||
+    (is.data.frame(file))
   )
-  stopifnot(is_scalar_character(outfile))
 
   # init
   theme <- paste(
@@ -61,6 +59,7 @@ shed <- function(
     sprintf("#hot tr td { font-size: %spx;  }", opts$font_size)
   )
 
+  fname <- make_outfile_name(file)
 
   shed_app <- shiny::shinyApp(
     ui = fluidPage(
@@ -80,8 +79,8 @@ shed <- function(
         right = 0,
 
         div(
-          class = "shedInfileContainer",
-          uiOutput("uiInfile")
+          class = "shedFnameContainer",
+          uiOutput("uiFname")
         ),
 
 
@@ -133,11 +132,13 @@ shed <- function(
 
 
     # I/O ---------------------------------------------------------------------
-      output$uiInfile <- renderUI({
+      output$uiFname <- renderUI({
+        flog.trace("Trigger input file color change")
+
         if (isTRUE(values[["modified"]])){
-          div(textInput("outputFile", NULL, outfile, width = "100%"), class = "infileNotSaved")
+          div(textInput("fname", NULL, input$fname, width = "100%"), class = "fnameNotSaved")
         } else {
-          div(textInput("outputFile", NULL, outfile, width = "100%"), class = "infileSaved")
+          div(textInput("fname", NULL, input$fname, width = "100%"), class = "fnameSaved")
         }
       })
 
@@ -146,46 +147,43 @@ shed <- function(
       observe({
         flog.debug("Trigger App Startup")
 
-        if (is.data.frame(infile)) {
+        updateTextInput(session, inputId = "fname", value = fname)
+
+        if (is.data.frame(file)) {
           flog.trace("Loading data from input data.frame")
           .output <- as.data.frame(rbind(
-          colnames(infile),
-          as.matrix(infile)
-        ),
-          stringsAsFactors = FALSE
-        )
+            colnames(file),
+            as.matrix(file)
+          ),
+            stringsAsFactors = FALSE
+          )
+
           if (!all(vapply(.output, is.character, logical(1)))) {
             flog.warn("All columns should be read as character")
           }
+
+          values[["modified"]] <- TRUE
+
         } else {
-          read <- read_fun()
-          .output <- read(input$outputFile, encoding = input[["readEncoding"]])
+          read    <- isolate(read_fun())
+          .output <- read(fname, encoding = input[["readEncoding"]])
+          values[["modified"]] <- FALSE
         }
 
-        values[["output"]]   <- .output
+        values[["output"]] <- .output
         rm(.output)
       })
 
 
-      observe({
-        if (!is.null(values[["output"]])) {
-          flog.trace("Loading data.frame from reactive value")
-          .output <- values[["output"]]
 
-          values[["output"]]   <- .output
+      observeEvent(input$hot, {
+        flog.trace("Trigger user input HOT update")
 
+        if (!is.null(input$hot)) {
+          values[["output"]]   <- hot_to_r(input$hot)
           values[["modified"]] <- !isTRUE(all.equal(
             try(unname(as.matrix(values[["output_saved"]])), silent = TRUE),
-            unname(as.matrix(.output))
-          ))
-        } else if (!is.null(input$hot)) {
-          flog.trace("Loading data.frame from HOT")
-          .output <- hot_to_r(input$hot)
-
-          values[["output"]]   <- .output
-          values[["modified"]] <- !isTRUE(all.equal(
-            try(unname(as.matrix(values[["output_saved"]])), silent = TRUE),
-            unname(as.matrix(.output))
+            unname(as.matrix(values[["output"]]))
           ))
         }
       })
@@ -193,8 +191,7 @@ shed <- function(
 
       output$hot <- renderRHandsontable({
         flog.trace("Trigger HOT display update")
-
-        print(head(values[["output"]]))
+        flog.trace(to_string(head(values[["output"]])))
 
         if (!is.null(values[["output"]])){
           rhandsontable(
@@ -213,10 +210,10 @@ shed <- function(
       observeEvent(input$btnSave, {
         flog.trace("Trigger Save Button")
 
-        .output   <- isolate(values[["output"]] )
+        .output <- isolate(values[["output"]] )
+        .fname  <- isolate(input$fname)
 
-
-        if (file.exists(outfile)){
+        if (file.exists(.fname)){
           flog.trace("Trigger Overwrite Modal")
 
           showModal(shiny::modalDialog(
@@ -233,27 +230,28 @@ shed <- function(
         }
 
         write_fun <- opts$write_funs[[input$writeFun]]
-        write_fun(.output, path = input$outputFile)
+        write_fun(.output, path = input$fname)
         values[["output_saved"]] <- .output
         values[["modified"]] <- FALSE
-        flog.info("Saved to %s", input$outputFile)
+        flog.info("Saved to %s", input$fname)
+
+        rm(.output)
+        rm(.fname)
       })
 
 
 
       # Overwrite Modal ---------------------------------------------------------
-      observeEvent(input$modalOverwriteYes,{
-        flog.debug("overwrite yes")
-        removeModal()
-      })
-
-      observeEvent(input$modalOverwriteNo,{
-        flog.debug("overwrite no")
+      observeEvent(input$modalOverwriteYes, {
+        flog.debug("Overwrite yes")
         removeModal()
       })
 
 
-
+      observeEvent(input$modalOverwriteNo, {
+        flog.debug("Overwrite no")
+        removeModal()
+      })
 
 
       # load --------------------------------------------------------------------
@@ -262,21 +260,23 @@ shed <- function(
 
         read <- isolate(read_fun())
 
-        if (file.exists(input$outputFile)){
+        if (file.exists(input$fname)){
           tryCatch({
-            flog.info("Loading data from file system: %s", input$outputFile)
-            .output <- read(input$outputFile, encoding = input[["readEncoding"]])
+            flog.info("Loading data from file system: %s", input$fname)
+            .output <- read(input$fname, encoding = input[["readEncoding"]])
             values[["output"]] <- .output
             values[["output_saved"]] <- .output
+            values[["modified"]] <- FALSE
+            rm(.output)
           },
             error = function(e) {
-              flog.error("Input file exists but cannot be read %s", input$outputFile)
+              flog.error("Input file exists but cannot be read %s", input$fname)
               flog.error("Reason: %s", e)
             }
           )
 
         } else {
-          flog.error("Input file does not exist: %s", input$outputFile)
+          flog.error("Input file does not exist: %s", input$fname)
         }
 
         if (!all(vapply(values[["output"]], is.character, logical(1)))) {
@@ -286,6 +286,7 @@ shed <- function(
 
 
       session$onSessionEnded(function() {
+        flog.trace("Trigger Session End")
         stopApp(isolate(values[["output"]]))
       })
     }
@@ -300,12 +301,10 @@ shed <- function(
 #' @rdname shed
 #' @export
 shed2 <- function(
-  infile,
-  outfile = make_outfile_name(infile)
+  file
 ){
   shed(
-    infile = infile,
-    outfile = outfile,
+    file = file,
     informat = "csv2",
     outformat = "csv2"
   )
@@ -317,7 +316,6 @@ shed2 <- function(
 # helpers -----------------------------------------------------------------
 
 shed_read_csv   <- function(path, encoding){
-
   flog.debug("Reading file %s with encoding %s", path, encoding)
 
   if (encoding == "guess"){
