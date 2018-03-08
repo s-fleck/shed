@@ -27,16 +27,20 @@
 shed <- function(
   infile,
   outfile = make_outfile_name(infile),
+  informat = "csv",
+  outformat = "csv",
   opts = list(
     css = system.file("css", "shed_dark.css", package = "shed"),
     font_size = getOption("shed.font_size", 14),
     write_funs = list(
       csv  = shed_write_csv,
-      csv2 = shed_write_csv2
+      csv2 = shed_write_csv2,
+      tsv  = shed_write_tsv
     ),
     read_funs = list(
       csv  = shed_read_csv,
-      csv2 = shed_read_csv2
+      csv2 = shed_read_csv2,
+      tsv  = shed_read_tsv
     ),
     read_encoding  = union(c("guess", "UTF-8"), iconvlist()),
     write_encoding = union("UTF-8", iconvlist())
@@ -88,7 +92,7 @@ shed <- function(
 
           div(
             class = "shedDropdownContainer",
-            selectInput("readFun", NULL, names(opts$read_funs))
+            selectInput("readFun", NULL, names(opts$read_funs), selected = informat)
           ),
 
           div(
@@ -102,7 +106,7 @@ shed <- function(
 
           div(
             class = "shedDropdownContainer",
-            selectInput("writeFun", NULL, names(opts$write_funs))
+            selectInput("writeFun", NULL, names(opts$write_funs), selected = outformat)
           ),
 
           div(
@@ -279,19 +283,8 @@ shed2 <- function(
   shed(
     infile = infile,
     outfile = outfile,
-    opts = list(
-      css = system.file("css", "shed_dark.css", package = "shed"),
-      font_size = getOption("shed.font_size", 14),
-      write_funs = list(
-        csv2 = shed_write_csv2,
-        csv  = shed_write_csv
-      ),
-      read_funs = list(
-        csv2 = shed_read_csv2,
-        csv  = shed_read_csv
-      )
-    )
-
+    informat = "csv2",
+    outformat = "csv2"
   )
 }
 
@@ -352,11 +345,47 @@ shed_read_csv2  <- function(path, encoding){
 }
 
 
-shed_write_csv  <- function(x, path)
-  readr::write_excel_csv(x, path, col_names = FALSE, na = "")
 
-shed_write_csv2 <- function(x, path)
+
+shed_read_tsv  <- function(path, encoding){
+
+  flog.debug("Reading file %s with encoding %s", path, encoding)
+
+  if (encoding == "guess"){
+    encoding <- guess_encoding2(path)
+  }
+
+  loc <- readr::locale(encoding = encoding)
+
+  res <- suppressMessages(as.data.frame(
+      readr::read_tsv(
+        path,
+        col_names = FALSE,
+        col_types = readr::cols(.default = "c"),
+      locale = loc
+    )
+  ))
+
+  mostattributes(res) <- NULL
+
+  flog.trace("Loaded data.frame: \n%s", to_string(res))
+  res
+}
+
+
+shed_write_csv  <- function(x, path){
+  readr::write_excel_csv(x, path, col_names = FALSE, na = "")
+}
+
+
+shed_write_csv2 <- function(x, path){
   readr::write_excel_csv2(x, path, col_names = FALSE, na = "")
+}
+
+
+shed_write_tsv <- function(x, path) {
+  readr::write_tsv(x, path, col_names = FALSE, na = "")
+}
 
 
 
