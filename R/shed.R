@@ -484,9 +484,10 @@ parse_output_df <- function(x){
 
 validate_input_df <- function(x){
   if (nrow(x) > 1000){
-    flog.warn(paste(
-      "Shed is designed for .csv files with less than 1000 rows.",
-      "Input has %s rows."), nrow(x) - 1
+    flog.warn(
+      paste("Shed is designed for datasets with less than 1000 rows and",
+      "performs badly for larger ones. Input has %s rows."),
+      nrow(x) - 1
     )
   }
 
