@@ -1,3 +1,5 @@
+# shed 0.0.3.9000
+
 # shed 0.0.3
 
 * fine-tuning of default shed theme
