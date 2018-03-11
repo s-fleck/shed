@@ -287,7 +287,7 @@ shed <- function(
 
       session$onSessionEnded(function() {
         flog.trace("Trigger Session End")
-        stopApp(isolate(values[["output"]]))
+        stopApp(parse_output_df(isolate(values[["output"]])))
       })
     }
   )
@@ -464,5 +464,12 @@ js_add_ctrl_hotkey <- function(command = 'console.log("pressed")', key){
   key,
   command
   )
+}
 
+
+parse_output_df <- function(x){
+  res <- x[-1, ]
+  colnames(res) <- as.character(x[1, ])
+  res[] <- lapply(res, readr::parse_guess)
+  res
 }
