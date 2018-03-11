@@ -8,6 +8,7 @@
 
 body {
   background: #000000;
+  font-family: monospace;
 }
 
 
@@ -57,7 +58,6 @@ body {
     vertical-align:top;
     background-color: #323232!important;
     color: #fdce5e;
-    font-family: monospace;
     border: #000000;
   }
 
@@ -65,7 +65,6 @@ body {
     font-size:90%;
     width: 80px;
     height: 34px;
-    font-family: monospace;
   }
 
   .shedButton:hover {
@@ -89,7 +88,6 @@ body {
   .selectize-input {
     background-color: #323232!important;
     font-size:90%;
-    font-family: monospace;
     width: 80px;
     height: 34px;
     color: #fdce5e;
@@ -167,4 +165,27 @@ body {
 
 .modal.fade {
   z-index: 10000000 !important;
+}
+
+
+.modal-content {
+  background-color: #fdce5e;
+}
+
+.modal-button {
+  color: #fdce5e;
+  background-color: #3b3b3b;
+  border: 0;
+}
+
+.modal-button:hover {
+  color: #fb8578;
+  background-color: #3b3b3b;
+  border: 0;
+}
+
+.modal-button:focus {
+  color: #fb8578;
+  background-color: #3b3b3b;
+  border: 0;
 }

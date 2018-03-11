@@ -98,10 +98,6 @@ shed <- function(
           div(
             class = "shedDropdownContainer",
             selectInput("writeFun", NULL, names(opts$write_funs), selected = outformat)
-          ),
-          div(
-            class = "shedDropdownContainer",
-            shiny::checkboxInput("chkOverwrite", "overwrite", value = FALSE)
           )
         )
       ),
@@ -119,6 +115,8 @@ shed <- function(
 
     # reactives -----------------------------------------------------------
       values <- reactiveValues()
+      values[["overwrite"]] <- FALSE
+
       read_fun  <- reactive({ opts$read_funs[[input$readFun]] })   #nolint
       write_fun <- reactive({ opts$write_funs[[input$writeFun]] })   #nolint
 
@@ -216,7 +214,7 @@ shed <- function(
       observeEvent(input$btnSave, {
         flog.trace("Trigger Save Button")
         .fname  <- isolate(input$fname)
-        .overwrite <- isolate(input$chkOverwrite)
+        .overwrite <- isolate(values[["overwrite"]])
 
         flog.trace("Target file %s", .fname)
         flog.trace("Overwrite is set to %s", .overwrite)
@@ -227,10 +225,10 @@ shed <- function(
         } else {
           flog.trace("Trigger Overwrite Modal")
           showModal(shiny::modalDialog(
-            title = "Overwrite?",
             size = "s",
-            shiny::actionButton("modalOverwriteYes", "Yes"),
-            shiny::actionButton("modalOverwriteNo", "No"),
+            div("Overwrite existing file?", style="height: 40px; " ),
+            shiny::actionButton("modalOverwriteYes", "Yes", class = "modal-button"),
+            shiny::actionButton("modalOverwriteNo", "No", class = "modal-button"),
             footer = NULL
           ))
         }
@@ -243,7 +241,7 @@ shed <- function(
 
       # Overwrite Modal ---------------------------------------------------------
       observeEvent(input$modalOverwriteYes, {
-        updateCheckboxInput(session, "chkOverwrite", value = TRUE)
+        values[["overwrite"]] <- TRUE
         save_file()
         removeModal()
       })
@@ -259,7 +257,7 @@ shed <- function(
       observeEvent(input$btnLoad, {
         flog.trace("Trigger Load Button")
 
-        read <- isolate(read_fun())
+        read <- read_fun()
 
         if (file.exists(input$fname)){
           tryCatch({
@@ -268,6 +266,7 @@ shed <- function(
             values[["output"]] <- .output
             values[["output_saved"]] <- .output
             values[["modified"]] <- FALSE
+            values[["overwrite"]] <- FALSE
             rm(.output)
           },
             error = function(e) {
