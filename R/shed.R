@@ -116,7 +116,6 @@ shed <- function(
     # reactives -----------------------------------------------------------
       values <- reactiveValues()
       values[["overwrite"]] <- FALSE
-
       read_fun  <- reactive({ opts$read_funs[[input$readFun]] })   #nolint
       write_fun <- reactive({ opts$write_funs[[input$writeFun]] })   #nolint
 
@@ -173,6 +172,8 @@ shed <- function(
           .output <- read(fname, encoding = input[["readEncoding"]])
           values[["modified"]] <- FALSE
         }
+
+        validate_input_df(.output)
 
         values[["output"]] <- .output
         rm(.output)
@@ -263,6 +264,9 @@ shed <- function(
           tryCatch({
             flog.info("Loading data from file system: %s", input$fname)
             .output <- read(input$fname, encoding = input[["readEncoding"]])
+
+            validate_input_df(.output)
+
             values[["output"]] <- .output
             values[["output_saved"]] <- .output
             values[["modified"]] <- FALSE
@@ -467,9 +471,29 @@ js_add_ctrl_hotkey <- function(command = 'console.log("pressed")', key){
 }
 
 
+
+
 parse_output_df <- function(x){
   res <- x[-1, ]
   colnames(res) <- as.character(x[1, ])
   res[] <- lapply(res, readr::parse_guess)
   res
+}
+
+
+
+validate_input_df <- function(x){
+  if (nrow(x) > 1000){
+    flog.warn(paste(
+      "Shed is designed for .csv files with less than 1000 rows.",
+      "Input has %s rows."), nrow(x) - 1
+    )
+  }
+
+  if (nrow(x) > 10000){
+    flog.fatal(paste(
+      "Loading data > 10000 rows is disabled as shed is unusably slow",
+      "for such large datasets. Input has %s rows."), nrow(x) - 1
+    ) %>% stop()
+  }
 }
