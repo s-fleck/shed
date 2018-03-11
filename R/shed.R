@@ -71,7 +71,6 @@ shed <- function(
         ))
       ),
 
-
       fixedPanel(
         id = "panelTop",
         top = 0,
@@ -82,32 +81,24 @@ shed <- function(
           class = "shedFnameContainer",
           uiOutput("uiFname")
         ),
-
-
         div(
           class = "shedCtrl",
-
           actionButton("btnLoad", "load", class = "shedButton shedCtrlElement"),
 
           div(
-            class = "shedDropdownContainer",
-            selectInput("readFun", NULL, names(opts$read_funs), selected = informat)
-          ),
-
+              class = "shedDropdownContainer",
+              selectInput("readFun", NULL, names(opts$read_funs), selected = informat)
+            ),
           div(
             class = "shedDropdownContainer",
             selectInput("readEncoding", NULL, opts$read_encoding)
           ),
-
           div(class = "shedCtrlSpacing"),
-
           actionButton("btnSave", "save", class = "shedButton shedCtrlElement"),
-
           div(
             class = "shedDropdownContainer",
             selectInput("writeFun", NULL, names(opts$write_funs), selected = outformat)
           ),
-
           div(
             class = "shedDropdownContainer",
             shiny::checkboxInput("chkOverwrite", "overwrite", value = FALSE)
@@ -126,12 +117,27 @@ shed <- function(
 
     server = function(input, output, session) {
 
+    # reactives -----------------------------------------------------------
       values <- reactiveValues()
       read_fun  <- reactive({ opts$read_funs[[input$readFun]] })   #nolint
       write_fun <- reactive({ opts$write_funs[[input$writeFun]] })   #nolint
 
 
-    # I/O ---------------------------------------------------------------------
+    # local funs ----------------------------------------------------------
+      save_file <- function(){
+        .output   <- values[["output"]]
+        .fname    <- input$fname
+        stopifnot( all(vapply(.output, is.character, logical(1))) )
+
+        write_fun <- opts$write_funs[[input$writeFun]]
+        write_fun(.output, path = .fname)
+        values[["output_saved"]] <- .output
+        values[["modified"]] <- FALSE
+        flog.info("Saved to %s", .fname)
+      }
+
+
+    # I/O -----------------------------------------------------------------
       output$uiFname <- renderUI({
         flog.trace("Trigger input file color change")
 
@@ -209,13 +215,17 @@ shed <- function(
       # save --------------------------------------------------------------------
       observeEvent(input$btnSave, {
         flog.trace("Trigger Save Button")
-
-        .output <- isolate(values[["output"]] )
         .fname  <- isolate(input$fname)
+        .overwrite <- isolate(input$chkOverwrite)
 
-        if (file.exists(.fname)){
+        flog.trace("Target file %s", .fname)
+        flog.trace("Overwrite is set to %s", .overwrite)
+
+        if (!file.exists(.fname) || isTRUE(.overwrite)){
+          save_file()
+
+        } else {
           flog.trace("Trigger Overwrite Modal")
-
           showModal(shiny::modalDialog(
             title = "Overwrite?",
             size = "s",
@@ -225,17 +235,7 @@ shed <- function(
           ))
         }
 
-        if (!all(vapply(.output, is.character, logical(1)))) {
-          flog.warn("All columns should be read as character")
-        }
-
-        write_fun <- opts$write_funs[[input$writeFun]]
-        write_fun(.output, path = input$fname)
-        values[["output_saved"]] <- .output
-        values[["modified"]] <- FALSE
-        flog.info("Saved to %s", input$fname)
-
-        rm(.output)
+        rm(.overwrite)
         rm(.fname)
       })
 
@@ -243,15 +243,16 @@ shed <- function(
 
       # Overwrite Modal ---------------------------------------------------------
       observeEvent(input$modalOverwriteYes, {
-        flog.debug("Overwrite yes")
+        updateCheckboxInput(session, "chkOverwrite", value = TRUE)
+        save_file()
         removeModal()
       })
-
 
       observeEvent(input$modalOverwriteNo, {
-        flog.debug("Overwrite no")
+        flog.info("Not saved")
         removeModal()
       })
+
 
 
       # load --------------------------------------------------------------------

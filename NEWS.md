@@ -3,6 +3,7 @@
 * fine-tuning of default shed theme
 * shed themes now live in separate css files
 * added minimal console logging for loading and saving
+* added overwrite modal
 
 
 
