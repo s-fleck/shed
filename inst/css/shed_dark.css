@@ -133,6 +133,7 @@ body {
 
   /* All headers */
   #hot .handsontable th {
+    border-color: #000000;
     background-color: #000000;
     color: #757571;
     vertical-align: middle;
