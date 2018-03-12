@@ -134,7 +134,7 @@ shed <- function(
       }
 
 
-    # I/O -----------------------------------------------------------------
+    # infile ui -----------------------------------------------------------
       output$uiFname <- renderUI({
         flog.trace("Trigger input file color change")
 
@@ -146,8 +146,27 @@ shed <- function(
       })
 
 
-    # Startup -----------------------------------------------------------------
-      observe({
+    # render hot
+      output$hot <- renderRHandsontable({
+        flog.trace("Trigger HOT display update")
+        flog.trace(to_string(head(values[["output"]])))
+
+        if (!is.null(values[["output"]])){
+          rhandsontable(
+            values[["output"]],
+            readOnly = FALSE,
+            useTypes = FALSE,
+            colHeaders = NULL,
+            rowHeights = opts$font_size + 20
+          )
+        }
+      })
+
+
+    # i/o -----------------------------------------------------------------
+
+    # . startup -----------------------------------------------------------
+      observeEvent(TRUE, once = TRUE, {
         flog.debug("Trigger App Startup")
 
         updateTextInput(session, inputId = "fname", value = fname)
@@ -180,7 +199,7 @@ shed <- function(
       })
 
 
-
+    # . edit hot ----------------------------------------------------------
       observeEvent(input$hot, {
         flog.trace("Trigger user input HOT update")
 
@@ -194,24 +213,7 @@ shed <- function(
       })
 
 
-      output$hot <- renderRHandsontable({
-        flog.trace("Trigger HOT display update")
-        flog.trace(to_string(head(values[["output"]])))
-
-        if (!is.null(values[["output"]])){
-          rhandsontable(
-            values[["output"]],
-            readOnly = FALSE,
-            useTypes = FALSE,
-            colHeaders = NULL,
-            rowHeights = opts$font_size + 20
-          )
-        }
-      })
-
-
-
-      # save --------------------------------------------------------------------
+    # . save --------------------------------------------------------------
       observeEvent(input$btnSave, {
         flog.trace("Trigger Save Button")
         .fname  <- isolate(input$fname)
@@ -238,9 +240,7 @@ shed <- function(
         rm(.fname)
       })
 
-
-
-      # Overwrite Modal ---------------------------------------------------------
+      # overwrite modal
       observeEvent(input$modalOverwriteYes, {
         values[["overwrite"]] <- TRUE
         save_file()
@@ -253,8 +253,7 @@ shed <- function(
       })
 
 
-
-      # load --------------------------------------------------------------------
+    # . load --------------------------------------------------------------------
       observeEvent(input$btnLoad, {
         flog.trace("Trigger Load Button")
 
