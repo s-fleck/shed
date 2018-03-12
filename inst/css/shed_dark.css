@@ -7,186 +7,186 @@
 
 
 body {
-    background: #000000;
+  background: #000000;
+  font-family: monospace;
+}
+
+
+/* Control Panel */
+
+  #panelTop {
+    background-color: #424242;
+    height: 120px;
+    margin-top: 0;
+    margin-bottom: 35px;
+    z-index: 10000;
+    border: #000000;
+  }
+
+
+  .shedFnameContainer {
+    margin-top: 12px;
+    margin-left: 6px;
+    margin-right: 12px;
+  }
+
+  .fnameSaved #fname{
+    color: #fdce5e!important;
+  }
+
+  .fnameNotSaved #fname {
+    color: #fb8578!important;
+  }
+
+  #fname{
+    background-color: #323232;
+    border: #181712;
+    width: 100%;
     font-family: monospace;
   }
-  
-  
-  /* Control Panel */
-  
-    #panelTop {
-      background-color: #424242;
-      height: 120px;
-      margin-top: 0;
-      margin-bottom: 35px;
-      z-index: 10000;
-      border: #000000;
-    }
-  
-  
-    .shedFnameContainer {
-      margin-top: 12px;
-      margin-left: 6px;
-      margin-right: 12px;
-    }
-  
-    .fnameSaved #fname{
-      color: #fdce5e!important;
-    }
-  
-    .fnameNotSaved #fname {
-      color: #fb8578!important;
-    }
-  
-    #fname{
-      background-color: #323232;
-      border: #181712;
-      width: 100%;
-      font-family: monospace;
-    }
-  
-  
-  
-    .shedCtrl {
-      display: inline-block;
-      margin-top: 12px;
-      margin-left: 6px;
-      margin-right: 6px;
-    }
-  
-    .shedCtrlElement {
-      vertical-align:top;
-      background-color: #323232!important;
-      color: #fdce5e;
-      border: #000000;
-    }
-  
-    .shedButton {
-      font-size:90%;
-      width: 80px;
-      height: 34px;
-    }
-  
-    .shedButton:hover {
-      color: #fb8578;
-    }
-  
-    .shedButton:focus{
-        color: #fb8578;
-     }
-  
-    .shedCtrlSpacing {
-      display: inline-block;
-      width: 80px;
-    }
-  
-    .shedDropdownContainer{
-      display: inline-block;
-      width: 80px;
-    }
-  
-    .selectize-input {
-      background-color: #323232!important;
-      font-size:90%;
-      width: 80px;
-      height: 34px;
-      color: #fdce5e;
-      border: #000000;
-    }
-  
-     .selectize-input:hover{
-        color: #fb8578;
-     }
-  
-     .selectize-input:focus{
-        color: #fb8578;
-     }
-  
-    .selectize-dropdown {
-      background-color: #fdce5e!important;
-      font-size:90%;
-      color: #323232;
-      width: 80px;
-      border: #000000;
-    }
-  
-  
-  
-  
-  
-  /* HOT Editor */
-  
-    .handsontable {
-      overflow: auto;
-    }
-  
-  
-    /* Master */
-  
-    #hot tr td {
-      background-color: #323232;
-      color: #f9f9f9;
-      vertical-align: middle;
-      font-family: monospace;
-      padding: 0 20px
-    }
-  
-    /* All headers */
-    #hot .handsontable th {
-      border-color: #000000;
-      background-color: #000000;
-      color: #757571;
-      vertical-align: middle;
-    }
-  
-    /* Context Menue */
-    .htMenu tr td {
-      color: #2b3e50;
-    }
-  
-    /* Borders (data) */
-    #hot .ht_master tr > td {
-      border-bottom: 1px solid #000000!important;
-      border-right: 0px solid #000000!important;
-      border-top: 0px solid #000000!important;
-      border-left: 0px solid #000000!important;
-    }
-  
-    /* Borders (row numbers) */
-    #hot .ht_clone_left th {
-      border-bottom: 1px solid #000000!important;
-      border-right: 0px solid #000000!important;
-      border-top: 0px solid #000000!important;
-      border-left: 0px solid #000000!important;
-    }
-  
-  
-  
-  /* misc */
-  
-  .modal.fade {
-    z-index: 10000000 !important;
+
+
+
+  .shedCtrl {
+    display: inline-block;
+    margin-top: 12px;
+    margin-left: 6px;
+    margin-right: 6px;
   }
-  
-  
-  .modal-content {
-    background-color: #fdce5e;
-  }
-  
-  .modal-button {
+
+  .shedCtrlElement {
+    vertical-align:top;
+    background-color: #323232!important;
     color: #fdce5e;
-    background-color: #3b3b3b;
-    border: 0;
+    border: #000000;
   }
-  
-  .modal-button:hover {
+
+  .shedButton {
+    font-size:90%;
+    width: 80px;
+    height: 34px;
+  }
+
+  .shedButton:hover {
     color: #fb8578;
-    background-color: #3b3b3b;
-    border: 0;
   }
-  
-  .modal-button:focus {
-    color: #fb8578;
-    background-color: #3b3b3b;
-    border: 0;
+
+  .shedButton:focus{
+      color: #fb8578;
+   }
+
+  .shedCtrlSpacing {
+    display: inline-block;
+    width: 80px;
   }
+
+  .shedDropdownContainer{
+    display: inline-block;
+    width: 80px;
+  }
+
+  .selectize-input {
+    background-color: #323232!important;
+    font-size:90%;
+    width: 80px;
+    height: 34px;
+    color: #fdce5e;
+    border: #000000;
+  }
+
+   .selectize-input:hover{
+      color: #fb8578;
+   }
+
+   .selectize-input:focus{
+      color: #fb8578;
+   }
+
+  .selectize-dropdown {
+    background-color: #fdce5e!important;
+    font-size:90%;
+    color: #323232;
+    width: 80px;
+    border: #000000;
+  }
+
+
+
+
+
+/* HOT Editor */
+
+  .handsontable {
+    overflow: auto;
+  }
+
+
+  /* Master */
+
+  #hot tr td {
+    background-color: #323232;
+    color: #f9f9f9;
+    vertical-align: middle;
+    font-family: monospace;
+    padding: 0 20px
+  }
+
+  /* All headers */
+  #hot .handsontable th {
+    border-color: #000000;
+    background-color: #000000;
+    color: #757571;
+    vertical-align: middle;
+  }
+
+  /* Context Menue */
+  .htMenu tr td {
+    color: #2b3e50;
+  }
+
+  /* Borders (data) */
+  #hot .ht_master tr > td {
+    border-bottom: 1px solid #000000!important;
+    border-right: 0px solid #000000!important;
+    border-top: 0px solid #000000!important;
+    border-left: 0px solid #000000!important;
+  }
+
+  /* Borders (row numbers) */
+  #hot .ht_clone_left th {
+    border-bottom: 1px solid #000000!important;
+    border-right: 0px solid #000000!important;
+    border-top: 0px solid #000000!important;
+    border-left: 0px solid #000000!important;
+  }
+
+
+
+/* misc */
+
+.modal.fade {
+  z-index: 10000000 !important;
+}
+
+
+.modal-content {
+  background-color: #fdce5e;
+}
+
+.modal-button {
+  color: #fdce5e;
+  background-color: #3b3b3b;
+  border: 0;
+}
+
+.modal-button:hover {
+  color: #fb8578;
+  background-color: #3b3b3b;
+  border: 0;
+}
+
+.modal-button:focus {
+  color: #fb8578;
+  background-color: #3b3b3b;
+  border: 0;
+}
