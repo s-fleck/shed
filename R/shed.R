@@ -187,7 +187,7 @@ shed <- function(
           values[["modified"]] <- TRUE
 
         } else {
-          read    <- isolate(read_fun())
+          read    <- read_fun()
           .output <- read(fname, encoding = input[["readEncoding"]])
           values[["modified"]] <- FALSE
         }
@@ -216,8 +216,8 @@ shed <- function(
     # . save --------------------------------------------------------------
       observeEvent(input$btnSave, {
         flog.trace("Trigger Save Button")
-        .fname  <- isolate(input$fname)
-        .overwrite <- isolate(values[["overwrite"]])
+        .fname  <- input$fname
+        .overwrite <- values[["overwrite"]]
 
         flog.trace("Target file %s", .fname)
         flog.trace("Overwrite is set to %s", .overwrite)
