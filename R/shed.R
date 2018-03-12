@@ -229,7 +229,7 @@ shed <- function(
           flog.trace("Trigger Overwrite Modal")
           showModal(shiny::modalDialog(
             size = "s",
-            div("Overwrite existing file?", style="height: 40px; " ),
+            div("Overwrite existing file?", style = "height: 40px; " ),
             shiny::actionButton("modalOverwriteYes", "Yes", class = "modal-button"),
             shiny::actionButton("modalOverwriteNo", "No", class = "modal-button"),
             footer = NULL
@@ -397,14 +397,20 @@ shed_read_tsv  <- function(path, encoding){
 }
 
 
+
+
 shed_write_csv  <- function(x, path){
   readr::write_excel_csv(x, path, col_names = FALSE, na = "")
 }
 
 
+
+
 shed_write_csv2 <- function(x, path){
   readr::write_excel_csv2(x, path, col_names = FALSE, na = "")
 }
+
+
 
 
 shed_write_tsv <- function(x, path) {
@@ -424,6 +430,7 @@ make_outfile_name <- function(x){
 
 
 
+
 guess_encoding2 <- function(path, default = "UTF-8"){
   dd <- readr::guess_encoding(path)
 
@@ -440,9 +447,12 @@ guess_encoding2 <- function(path, default = "UTF-8"){
 
 
 
+
 to_string <- function(x){
   paste(capture.output(print(x)), collapse = "\n")
 }
+
+
 
 
 #' Title
@@ -478,6 +488,7 @@ parse_output_df <- function(x){
   res[] <- lapply(res, readr::parse_guess)
   res
 }
+
 
 
 
