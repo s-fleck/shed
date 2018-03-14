@@ -146,10 +146,10 @@ body {
 
   /* Borders (data) */
   #hot .ht_master tr > td {
-    border-bottom: 1px solid #000000!important;
-    border-right: 0px solid #000000!important;
-    border-top: 0px solid #000000!important;
-    border-left: 0px solid #000000!important;
+    border-bottom: 1px solid #D7CCC8!important;
+    border-right: 0px solid #D7CCC8!important;
+    border-top: 0px solid #D7CCC8!important;
+    border-left: 0px solid #D7CCC8!important;
   }
 
   /* Borders (row numbers) */
