@@ -34,5 +34,3 @@ shed_opts <- function(
     write_encoding = write_encoding
   )
 }
-
-
