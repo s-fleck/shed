@@ -28,22 +28,7 @@ shed <- function(
   file,
   informat = "csv",
   outformat = "csv",
-  opts = list(
-    css = system.file("css", "shed_dark.css", package = "shed"),
-    font_size = getOption("shed.font_size", 14),
-    write_funs = list(
-      csv  = shed_write_csv,
-      csv2 = shed_write_csv2,
-      tsv  = shed_write_tsv
-    ),
-    read_funs = list(
-      csv  = shed_read_csv,
-      csv2 = shed_read_csv2,
-      tsv  = shed_read_tsv
-    ),
-    read_encoding  = union(c("guess", "UTF-8"), iconvlist()),
-    write_encoding = union("UTF-8", iconvlist())
-  )
+  opts = shed_opts()
 ){
   # preconditions
   stopifnot(is_scalar_integerish(opts$font_size))
