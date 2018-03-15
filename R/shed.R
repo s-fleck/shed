@@ -52,6 +52,8 @@ shed <- function(
 
   if (is_integerish(file)){
 
+    stopifnot(all(file > 0))
+
     if (identical(length(file), 1L)){
       file <- c(1, file)
     }
@@ -494,7 +496,7 @@ js_add_ctrl_hotkey <- function(command = 'console.log("pressed")', key){
 
 
 parse_output_df <- function(x){
-  res <- x[-1,, drop = FALSE]
+  res <- x[-1, , drop = FALSE]
   colnames(res) <- as.character(x[1, ])
   res[] <- lapply(res, readr::parse_guess)
   rownames(res) <- NULL
@@ -523,12 +525,11 @@ validate_input_df <- function(x){
 
 
 
-empty_df <- function(rows, cols){
 
+empty_df <- function(rows, cols){
   res <- as.list(rep("", cols))
   res[[1]] <- rep("", rows)
   res <- as.data.frame(res)
   names(res) <- paste0("X", seq_len(cols))
   res
-
 }
