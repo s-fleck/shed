@@ -25,7 +25,7 @@
 #' }
 #'
 shed <- function(
-  file,
+  file = NULL,
   informat = "csv",
   outformat = "csv",
   opts = list(
@@ -49,11 +49,14 @@ shed <- function(
   stopifnot(is_scalar_integerish(opts$font_size))
   stopifnot(is_css_file(opts$css))
   stopifnot(
+    is.null(file) ||
     (is_scalar_character(file) && file.exists(file)) ||
     (is.data.frame(file))
   )
 
   # init
+  if (is.null(file)) file <- data.frame("" = "")
+
   theme <- paste(
     paste(readLines(opts$css), collapse = "\n"),
     sprintf("#hot tr td { font-size: %spx;  }", opts$font_size)
