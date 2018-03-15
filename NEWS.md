@@ -1,6 +1,7 @@
 # shed 0.0.3.9000
 
 * warn / abort when loading data sets over 1000 / 10000 rows
+* added light theme (thanks to arushnagpal)
 
 
 # shed 0.0.3
