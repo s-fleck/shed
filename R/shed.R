@@ -467,7 +467,7 @@ to_string <- function(x){
 
 #' Add hotkey that contains CTRL to a shiny app
 #'
-#' @param command
+#' @param command scalar character. a java script command to execute
 #' @param keys `integer` vector of Keycode numbers, see
 #'   http://keycode.info
 #'
