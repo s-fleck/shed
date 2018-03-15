@@ -300,8 +300,6 @@ shed <- function(
     # session end -------------------------------------------------------------
       session$onSessionEnded(function() {
         flog.trace("Trigger Session End")
-        print(isolate(isolate(values[["output"]])))
-
         stopApp(parse_output_df(isolate(values[["output"]])))
       })
     }

@@ -6,7 +6,11 @@ is_scalar <- function(x){
 
 
 is_integerish <- function(x){
-  is.atomic(x) && all(as.integer(x) == x)
+  if (!is.numeric(x)) {
+    return(FALSE)
+  } else {
+    is.atomic(x) && all(as.integer(x) == x)
+  }
 }
 
 
