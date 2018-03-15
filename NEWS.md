@@ -2,6 +2,8 @@
 
 * warn / abort when loading data sets over 1000 / 10000 rows
 * added light theme (thanks to arushnagpal)
+* the `file` paramter of `shed()` now accepts integers giving row and col 
+  numbers for creating empty tables
 
 
 # shed 0.0.3

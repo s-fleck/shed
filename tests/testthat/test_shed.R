@@ -24,4 +24,22 @@ test_that("shed works as expected", {
   expect_true(is.numeric(tres[[3]]))
   expect_true(is.numeric(tres[[4]]))
   expect_true(is.character(tres[[5]]))
+
+
+  tdat2 <- data.frame(
+    X1 = c("X1", ""),
+    stringsAsFactors = FALSE
+  )
+
+
+  tres <- parse_output_df(tdat2)
+
+  expect_equal(
+    tres,
+    data.frame(
+      X1 = NA,
+      stringsAsFactors = FALSE
+    )
+  )
+
 })

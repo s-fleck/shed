@@ -1,6 +1,10 @@
 #' Edit csv Files With Shiny
 #'
-#' @param fname Input file
+#' @param fname either:
+#'   * A scalar `character`: Path to the input file
+#'   * A `data.frame`
+#'   * An `integer` scalar: number of columns of desired empty table
+#'   * An `integer` vector of length 2: desired `rows, columns` of target table
 #' @param outfile Output file path
 #' @param opts Options to configure behaviour and appearence of the shed
 #'   app (see below)
@@ -22,7 +26,10 @@
 #'
 #' \dontrun{
 #' shed(iris)
+#' shed(4)  # Empty table with 4 columns
+#' shed(c(2, 4))  # Empty table with 2 rows and 4 columns
 #' }
+#'
 #'
 shed <- function(
   file = NULL,
@@ -36,11 +43,22 @@ shed <- function(
   stopifnot(
     is.null(file) ||
     (is_scalar_character(file) && file.exists(file)) ||
-    (is.data.frame(file))
+    (is.data.frame(file)) ||
+    (is_integerish(file) && length(file) %in% 1:2)
   )
 
   # init
-  if (is.null(file)) file <- data.frame("" = "")
+  if (is.null(file)) file <- 1L
+
+  if (is_integerish(file)){
+
+    if (identical(length(file), 1L)){
+      file <- c(1, file)
+    }
+
+    file <- empty_df(file[[1]], file[[2]])
+  }
+
 
   theme <- paste(
     paste(readLines(opts$css), collapse = "\n"),
@@ -276,8 +294,12 @@ shed <- function(
       })
 
 
+
+    # session end -------------------------------------------------------------
       session$onSessionEnded(function() {
         flog.trace("Trigger Session End")
+        print(isolate(isolate(values[["output"]])))
+
         stopApp(parse_output_df(isolate(values[["output"]])))
       })
     }
@@ -443,13 +465,14 @@ to_string <- function(x){
 
 
 
-#' Title
+#' Add hotkey that contains CTRL to a shiny app
 #'
 #' @param command
 #' @param keys `integer` vector of Keycode numbers, see
 #'   http://keycode.info
 #'
 #' @return `character` java script code
+#' @noRd
 js_add_ctrl_hotkey <- function(command = 'console.log("pressed")', key){
   stopifnot(length(key) == 1)
 
@@ -471,9 +494,10 @@ js_add_ctrl_hotkey <- function(command = 'console.log("pressed")', key){
 
 
 parse_output_df <- function(x){
-  res <- x[-1, ]
+  res <- x[-1,, drop = FALSE]
   colnames(res) <- as.character(x[1, ])
   res[] <- lapply(res, readr::parse_guess)
+  rownames(res) <- NULL
   res
 }
 
@@ -495,4 +519,16 @@ validate_input_df <- function(x){
       "for such large datasets. Input has %s rows."), nrow(x) - 1
     ) %>% stop()
   }
+}
+
+
+
+empty_df <- function(rows, cols){
+
+  res <- as.list(rep("", cols))
+  res[[1]] <- rep("", rows)
+  res <- as.data.frame(res)
+  names(res) <- paste0("X", seq_len(cols))
+  res
+
 }

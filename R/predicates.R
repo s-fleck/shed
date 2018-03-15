@@ -5,9 +5,15 @@ is_scalar <- function(x){
 
 
 
+is_integerish <- function(x){
+  is.atomic(x) && all(as.integer(x) == x)
+}
+
+
+
+
 is_scalar_integerish <- function(x){
-  is_scalar(x) &&
-  (as.integer(x) == x)
+  is_scalar(x) && is_integerish(x)
 }
 
 
