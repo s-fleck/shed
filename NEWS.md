@@ -4,6 +4,8 @@
 * added light theme (thanks to arushnagpal)
 * the `file` paramter of `shed()` now accepts integers giving row and col 
   numbers for creating empty tables
+* textInput for filename now longer loses focus while typing
+* `shed("newfilename.csv")` can now be used to generate new files
 
 
 # shed 0.0.3

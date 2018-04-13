@@ -42,12 +42,13 @@ shed <- function(
   stopifnot(is_css_file(opts$css))
   stopifnot(
     is.null(file) ||
-    (is_scalar_character(file) && file.exists(file)) ||
+    (is_scalar_character(file)) ||
     (is.data.frame(file)) ||
     (is_integerish(file) && length(file) %in% 1:2)
   )
 
   # init
+
   if (is.null(file)) file <- 1L
 
   if (is_integerish(file)){
@@ -69,9 +70,15 @@ shed <- function(
 
   fname <- make_outfile_name(file)
 
+  if (is_scalar_character(file) && !file.exists(file)){
+    file <- empty_df(1, 1)
+  }
+
+
   shed_app <- shiny::shinyApp(
     ui = fluidPage(
       width = "100%",
+      shinyjs::useShinyjs(),
       tags$head(
         tags$style(HTML(theme)),
         tags$script(HTML(
@@ -87,7 +94,7 @@ shed <- function(
 
         div(
           class = "shedFnameContainer",
-          uiOutput("uiFname")
+          div(textInput("fname", NULL, fname, width = "100%"), class = "fnameSaved", id = "fnameDiv")
         ),
         div(
           class = "shedCtrl",
@@ -143,13 +150,19 @@ shed <- function(
 
 
     # infile ui -----------------------------------------------------------
-      output$uiFname <- renderUI({
+      observe({
         flog.trace("Trigger input file color change")
 
+        if(!file.exists(input$fname)){
+          values[["modified"]] <- TRUE
+        }
+
         if (isTRUE(values[["modified"]])){
-          div(textInput("fname", NULL, input$fname, width = "100%"), class = "fnameNotSaved")
+          flog.trace("Input file color changed to NotSaved")
+          shinyjs::runjs('document.getElementById("fnameDiv").className  = "fnameNotSaved";')
         } else {
-          div(textInput("fname", NULL, input$fname, width = "100%"), class = "fnameSaved")
+          flog.trace("Input file color changed to Saved")
+          shinyjs::runjs('document.getElementById("fnameDiv").className  = "fnameSaved";')
         }
       })
 
