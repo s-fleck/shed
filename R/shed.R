@@ -327,7 +327,7 @@ shed <- function(
 #' @rdname shed
 #' @export
 shed2 <- function(
-  file
+  file = NULL
 ){
   shed(
     file = file,
