@@ -137,6 +137,7 @@ shed <- function(
 
     # local funs ----------------------------------------------------------
       save_file <- function(){
+        flog.trace("Trigger save file")
         .output   <- values[["output"]]
         .fname    <- input$fname
         stopifnot( all(vapply(.output, is.character, logical(1))) )
@@ -170,9 +171,8 @@ shed <- function(
     # render hot
       output$hot <- renderRHandsontable({
         flog.trace("Trigger HOT display update")
-        flog.trace(to_string(head(values[["output"]])))
 
-        if (!is.null(values[["output"]])){
+        if (is.data.frame(values[["output"]])){
           rhandsontable(
             values[["output"]],
             readOnly = FALSE,
@@ -180,6 +180,9 @@ shed <- function(
             colHeaders = NULL,
             rowHeights = opts$font_size + 20
           )
+        } else {
+          flog.trace("'output' is not a data.frame")
+          NULL
         }
       })
 
@@ -225,7 +228,30 @@ shed <- function(
         flog.trace("Trigger user input HOT update")
 
         if (!is.null(input$hot)) {
-          values[["output"]]   <- hot_to_r(input$hot)
+
+          values[["output"]]   <- hot_to_r_safely(input$hot)
+
+          if (
+            identical(nrow(values[["output"]]), 0L) ||
+            identical(ncol(values[["output"]]), 0L)
+          ){
+            flog.trace(
+              "data.frame has illegal dimensions: %sx%s; returning empty 1x1 data.frame instead.",
+              nrow(values[["output"]]),
+              ncol(values[["output"]])
+            )
+            values[["output"]] <- empty_df(1, 1)
+            output$hot <- renderRHandsontable(
+              rhandsontable(
+                values[["output"]],
+                readOnly = FALSE,
+                useTypes = FALSE,
+                colHeaders = NULL,
+                rowHeights = opts$font_size + 20
+              )
+            )
+          }
+
           values[["modified"]] <- !isTRUE(all.equal(
             try(unname(as.matrix(values[["output_saved"]])), silent = TRUE),
             unname(as.matrix(values[["output"]]))
@@ -263,12 +289,14 @@ shed <- function(
 
       # overwrite modal
       observeEvent(input$modalOverwriteYes, {
+        flog.trace("Trigger modalOverwriteYes")
         values[["overwrite"]] <- TRUE
         save_file()
         removeModal()
       })
 
       observeEvent(input$modalOverwriteNo, {
+        flog.trace("Trigger modalOverwriteNo")
         flog.info("Not saved")
         removeModal()
       })
@@ -540,7 +568,29 @@ validate_input_df <- function(x){
 empty_df <- function(rows, cols){
   res <- as.list(rep("", cols))
   res[[1]] <- rep("", rows)
-  res <- as.data.frame(res)
+  res <- as.data.frame(res, stringsAsFactors = FALSE)
   names(res) <- paste0("X", seq_len(cols))
   res
+}
+
+
+
+hot_to_r_safely <- function(...){
+
+  res <- tryCatch(
+    hot_to_r(...),
+    error = function(...) {
+      flog.debug("Cannot convert Handsontable, returning empty 0x0 data.frame instead.")
+      empty_df(0, 0)
+    }
+  )
+
+  stopifnot(is.data.frame(res))
+
+  if (identical(nrow(res), 0L) || identical(ncol(res), 0L)){
+    flog.debug("Cannot handle zero-row data.frame, returning empty 0x0 data.frame instead.")
+    empty_df(0, 0)
+  } else {
+    res
+  }
 }
