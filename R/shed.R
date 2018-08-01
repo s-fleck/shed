@@ -170,16 +170,9 @@ shed <- function(
 
     # render hot
       output$hot <- renderRHandsontable({
-        flog.trace("Trigger HOT display update")
-
         if (is.data.frame(values[["output"]])){
-          rhandsontable(
-            values[["output"]],
-            readOnly = FALSE,
-            useTypes = FALSE,
-            colHeaders = NULL,
-            rowHeights = opts$font_size + 20
-          )
+          flog.trace("Trigger HOT render")
+          rhandsontable_shed(values[["output"]], opts = opts)
         } else {
           flog.trace("'output' is not a data.frame")
           NULL
@@ -235,6 +228,7 @@ shed <- function(
             identical(nrow(values[["output"]]), 0L) ||
             identical(ncol(values[["output"]]), 0L)
           ){
+            flog.trace("Trigger HOT render")
             flog.trace(
               "data.frame has illegal dimensions: %sx%s; returning empty 1x1 data.frame instead.",
               nrow(values[["output"]]),
@@ -242,13 +236,7 @@ shed <- function(
             )
             values[["output"]] <- empty_df(1, 1)
             output$hot <- renderRHandsontable(
-              rhandsontable(
-                values[["output"]],
-                readOnly = FALSE,
-                useTypes = FALSE,
-                colHeaders = NULL,
-                rowHeights = opts$font_size + 20
-              )
+              rhandsontable_shed(values[["output"]], opts = opts)
             )
           }
 
@@ -594,3 +582,16 @@ hot_to_r_safely <- function(...){
     res
   }
 }
+
+
+
+rhandsontable_shed <- function(data, opts){
+  rhandsontable(
+    data,
+    readOnly = FALSE,
+    useTypes = FALSE,
+    colHeaders = NULL,
+    rowHeights = opts$font_size + 20
+  )
+}
+
