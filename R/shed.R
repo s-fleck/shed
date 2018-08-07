@@ -143,10 +143,17 @@ shed <- function(
         stopifnot( all(vapply(.output, is.character, logical(1))) )
 
         write_fun <- opts$write_funs[[input$writeFun]]
-        write_fun(.output, path = .fname)
-        values[["output_saved"]] <- .output
-        values[["modified"]] <- FALSE
-        flog.info("Saved to %s", .fname)
+        is_saved <- try(write_fun(.output, path = .fname))
+        is_saved <- !inherits(is_saved, "try-error") && file.exists(.fname)
+
+        if (is_saved){
+          values[["output_saved"]] <- .output
+          values[["modified"]] <- FALSE
+          flog.info("Saved to %s", .fname)
+
+        } else {
+          flog.error("Could not save file to '%s'", .fname)
+        }
       }
 
 
