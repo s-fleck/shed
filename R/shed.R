@@ -574,7 +574,8 @@ hot_to_r_safely <- function(...){
 
   res <- tryCatch(
     hot_to_r(...),
-    error = function(...) {
+    error = function(e) {
+      flog.error(e)
       flog.debug("Cannot convert Handsontable, returning empty 0x0 data.frame instead.")
       empty_df(0, 0)
     }
