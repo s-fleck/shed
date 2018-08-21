@@ -446,13 +446,27 @@ shed_read_tsv  <- function(path, encoding){
 
 
 shed_write_csv  <- function(x, path){
-  readr::write_excel_csv(x, path, col_names = FALSE, na = "")
+  readr::write_csv(x, path, col_names = FALSE, na = "")
 }
 
 
 
 
 shed_write_csv2 <- function(x, path){
+  readr::write_csv2(x, path, col_names = FALSE, na = "")
+}
+
+
+
+
+shed_write_excel_csv  <- function(x, path){
+  readr::write_excel_csv(x, path, col_names = FALSE, na = "")
+}
+
+
+
+
+shed_write_excel_csv2 <- function(x, path){
   readr::write_excel_csv2(x, path, col_names = FALSE, na = "")
 }
 

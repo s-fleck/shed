@@ -9,6 +9,8 @@ shed_opts <- function(
     list(
       csv  = shed:::shed_write_csv,
       csv2 = shed:::shed_write_csv2,
+      excel_csv  = shed:::shed_write_excel_csv,
+      excel_csv2 = shed:::shed_write_excel_csv2,
       tsv  = shed:::shed_write_tsv
     )
   ),
