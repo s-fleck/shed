@@ -38,9 +38,10 @@ shed <- function(
   opts = shed_opts()
 ){
   # preconditions
-  stopifnot(is_scalar_integerish(opts$font_size))
-  stopifnot(is_css_file(opts$css))
   stopifnot(
+    is_scalar_integerish(opts$font_size),
+    is_css_file(opts$css),
+
     is.null(file) ||
     (is_scalar_character(file)) ||
     (is.data.frame(file)) ||
@@ -358,6 +359,37 @@ shed2 <- function(
     outformat = "csv2"
   )
 }
+
+
+
+
+#' @rdname shed
+#' @export
+shedx <- function(
+  file = NULL
+){
+  shed(
+    file = file,
+    informat = "csv2",
+    outformat = "excel_csv2"
+  )
+}
+
+
+
+
+#' @rdname shed
+#' @export
+shedx2 <- function(
+  file = NULL
+){
+  shed(
+    file = file,
+    informat = "csv2",
+    outformat = "excel_csv2"
+  )
+}
+
 
 
 
