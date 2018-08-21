@@ -9,13 +9,12 @@ shed
 
 A minimal, eye-friendly csv editor made with shiny, rhandsontable and readr. Shed is designed to quickly edit small (hundreds of rows) csv files and `data.frames`. It uses `readr::write_excel_csv()` as backend for writing files, and thus produces UTF-8 encoded csv files that are compatbile with MS Excel by default.
 
-Help Wanted
------------
+Development status
+------------------
 
-Shed is still in an early stage of development. If you think shed could be useful to you you can contribute in the following way:
+shed is perfectly usable and the internals are more or less stable. The user interface might still change a bit, especially how files are read and written. There is also an [issue in rhandsontable](https://github.com/jrowen/rhandsontable/issues/264) which I want to see fixed - or figure out a workaround for - before I plan on putting shed on CRAN.
 
--   File feature requests and bug reports in the issue tracker
--   Make a more modern looking, light css theme for shed (see `inst/css/shed_dark.css`)
+If you have any feature requests or comments don't hesitate to file an issue or send a mail.
 
 Installation
 ------------
