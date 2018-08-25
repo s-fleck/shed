@@ -1,14 +1,13 @@
-
-#' @include ui.R server.R
 sheditor <- R6::R6Class(
   "sheditor",
   public = list(
     initialize =
       function(
         x,
-        fname,
-        format,
-        theme = read_css_theme(getOption("shed.css", system.file("css", "shed_dark.css", package = "shed")))
+        fname  = tempfile(),
+        format = shed_format_csv2x,
+        locale = readr::locale(),
+        theme  = read_css_theme(getOption("shed.css", system.file("css", "shed_dark.css", package = "shed")))
       ){
         self$theme  <- theme
         self$fname  <- fname
@@ -24,7 +23,8 @@ sheditor <- R6::R6Class(
           .data   = self$data,
           .fname  = self$fname,
           .format = self$format,
-          .theme  = self$theme
+          .theme  = self$theme,
+          .locale = self$locale
         )
       },
     fname = NULL,
@@ -38,6 +38,7 @@ sheditor <- R6::R6Class(
       .data,
       .fname,
       .format,
+      .locale,
       .theme
     ){
       shiny::shinyApp(
@@ -81,40 +82,37 @@ sheditor <- R6::R6Class(
         output,
         session
         ){
-          # reactives -----------------------------------------------------------
-          values <- reactiveValues()
-          values[["overwrite"]] <- FALSE
-          values[["modified"]] <- FALSE
-          values[["output"]] <- .data
+          # helpers ------------------------------------------------------------
+          is_bool <- function(x) identical(x, TRUE) || identical(x, FALSE)
 
-          # . startup -----------------------------------------------------------
-          # observeEvent(TRUE, once = TRUE, {
-          #   flog.debug("Trigger App Startup")
-          #
-          #   print(.fname)
-          #   print(.data)
-          #
-          # })
 
-          # local funs ----------------------------------------------------------
-          save_file <- function(){
-            flog.trace("Trigger save file")
-            output   <- values[["output"]]
-            fname    <- input$fname
-            stopifnot( all(vapply(output, is.character, logical(1))) )
+          # int -----------------------------------------------------------
+          values    <- reactiveValues()
+          read_fun  <- .format$read_fun[[1]]
+          write_fun <- .format$write_fun[[1]]
+          .data[]   <- lapply(.data, as.character)
+          stopifnot(
+            is_read_fun(read_fun),
+            is_write_fun(write_fun)
+          )
 
-            is_saved <- try(.format$write_fun(output, path = fname))
-            is_saved <- !inherits(is_saved, "try-error") && file.exists(fname)
 
-            if (is_saved){
-              values[["output_saved"]] <- output
-              values[["modified"]] <- FALSE
-              flog.info("Saved to %s", fname)
+          # startup -----------------------------------------------------------
+          observeEvent(TRUE, once = TRUE, {
+            flog.debug("Trigger App Startup")
 
-            } else {
-              flog.error("Could not save file to '%s'", fname)
-            }
-          }
+            values[["overwrite"]] <- FALSE
+            values[["modified"]] <- FALSE
+            values[["output"]] <- .data
+
+            stopifnot(
+              is.function(read_fun),
+              is.function(write_fun),
+              is.data.frame(values[["output"]]),
+              is_bool(values[["modified"]]),
+              is_bool(values[["overwrite"]])
+            )
+          })
 
 
           # infile ui -----------------------------------------------------------
@@ -135,7 +133,7 @@ sheditor <- R6::R6Class(
           })
 
 
-          # render hot
+          # render hot ---------------------------------------------------------
           output$hot <- renderRHandsontable({
             if (is.data.frame(values[["output"]])){
               flog.trace("Trigger HOT render")
@@ -148,8 +146,6 @@ sheditor <- R6::R6Class(
 
 
           # i/o -----------------------------------------------------------------
-
-
 
           # . edit hot ----------------------------------------------------------
           observeEvent(input$hot, {
@@ -184,6 +180,27 @@ sheditor <- R6::R6Class(
 
 
           # . save --------------------------------------------------------------
+          save_file <- function(){
+            flog.trace("Trigger save file")
+            assert_only_char_cols(values[["output"]])
+
+            is_saved <- tryCatch(
+              expr = {write_fun(values[["output"]], path = input$fname); TRUE},
+              error = function(e) {flog.error(e); FALSE}
+            )
+            is_saved <- is_saved && file.exists(input$fname)
+
+            if (is_saved){
+              values[["output_saved"]] <- values[["output"]]
+              values[["modified"]] <- FALSE
+              flog.info("Saved to %s", input$fname)
+
+            } else {
+              flog.error("Could not save file to '%s'", input$fname)
+            }
+          }
+
+
           observeEvent(input$btnSave, {
             flog.trace("Trigger Save Button")
             fname  <- input$fname
@@ -230,31 +247,30 @@ sheditor <- R6::R6Class(
             flog.trace("Trigger Load Button")
 
             if (file.exists(input$fname)){
-              tryCatch({
-                flog.info("Loading data from file system: %s", input$fname)
-                output <- .format$read_fun(input$fname, encoding = input[["readEncoding"]])
+              tryCatch(
+                {
+                  flog.info("Loading data from file system: %s", input$fname)
+                  output <- read_fun(input$fname, locale = .locale)
 
-                validate_input_df(output)
+                  validate_input_df(output)
 
-                values[["output"]] <- output
-                values[["output_saved"]] <- output
-                values[["modified"]] <- FALSE
-                values[["overwrite"]] <- FALSE
-                rm(output)
-              },
-              error = function(e) {
-                flog.error("Input file exists but cannot be read %s", input$fname)
-                flog.error("Reason: %s", e)
-              }
+                  values[["output"]] <- output
+                  values[["output_saved"]] <- output
+                  values[["modified"]] <- FALSE
+                  values[["overwrite"]] <- FALSE
+                  rm(output)
+                },
+                error = function(e) {
+                  flog.error("Input file exists but cannot be read %s", input$fname)
+                  flog.error("Reason: %s", e)
+                }
               )
 
             } else {
               flog.error("Input file does not exist: %s", input$fname)
             }
 
-            if (!all(vapply(values[["output"]], is.character, logical(1)))) {
-              flog.warn("All columns should be read as character")
-            }
+            assert_only_char_cols(values[["output"]])
           })
 
 
@@ -269,3 +285,22 @@ sheditor <- R6::R6Class(
     }
   )
 )
+
+
+
+has_only_char_cols <- function(x){
+  is.data.frame(x) && all(vapply(x, is.character, logical(1)))
+}
+
+
+
+assert_only_char_cols <- function(x){
+  if (!has_only_char_cols(x)){
+    msg <- flog.fatal(paste(
+      "All columns of 'x' must be character but x looks like ths:",
+      toString(str(x)))
+    )
+    stop(msg)
+  }
+  TRUE
+}
