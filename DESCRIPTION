@@ -18,3 +18,12 @@ Roxygen: list(markdown = TRUE)
 RoxygenNote: 6.0.1.9000
 Suggests: 
     testthat
+Collate: 
+    'predicates.R'
+    'read_css_theme.R'
+    'shed-package.R'
+    'shed.R'
+    'shed_formats.R'
+    'server.R'
+    'ui.R'
+    'sheditor.R'
