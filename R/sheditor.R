@@ -3,16 +3,22 @@ sheditor <- R6::R6Class(
   public = list(
     initialize =
       function(
-        x,
-        fname  = tempfile(),
+        input,
+        file   = if (is.data.frame(input)) tempfile() else input,
         format = shed_format_csv2x,
         locale = readr::locale(),
         theme  = "default"
       ){
+        if (is.data.frame(input))
+          self$data <- input
+        else
+          self$data  <- format$read_fun(input, locale = locale)
+
         self$theme  <- load_theme(theme)
-        self$fname  <- fname
+        self$fname  <- file
         self$format <- format
-        self$data   <- x
+        self$locale <- locale
+
       },
     edit =
       function(
@@ -34,7 +40,8 @@ sheditor <- R6::R6Class(
     fname = NULL,
     data = NULL,
     format = NULL,
-    theme = NULL
+    theme = NULL,
+    locale = NULL
   ),
 
   private = list(
@@ -105,7 +112,6 @@ sheditor <- R6::R6Class(
 
             values[["overwrite"]] <- FALSE
             values[["modified"]]  <- FALSE
-            print(.data)
             values[["output"]]    <- prep_input_df(.data)
 
             stopifnot(
