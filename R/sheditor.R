@@ -3,7 +3,7 @@ sheditor <- R6::R6Class(
   public = list(
     initialize =
       function(
-        input,
+        input  = NULL,
         file   = if (is.data.frame(input)) tempfile() else input,
         format = shed_format_csv2x,
         locale = readr::locale(),
@@ -12,7 +12,10 @@ sheditor <- R6::R6Class(
         if (is.data.frame(input))
           self$data <- input
         else
-          self$data  <- format$read_fun(input, locale = locale)
+          data  <- tryCatch(
+            format$read_fun(input, locale = locale),
+            error = function(e) empty_df(1, 1)
+          )
 
         self$theme  <- load_theme(theme)
         self$fname  <- file
