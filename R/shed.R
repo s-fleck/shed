@@ -32,11 +32,14 @@
 #'
 #'
 shed <- function(
-  file = NULL,
-  informat = "csv",
-  outformat = "csv",
-  opts = shed_opts()
+  x,
+  file,
+  locale = readr::locale(),
+  theme = "default"
 ){
+
+  theme <- load_theme(theme)
+
   # preconditions
   stopifnot(
     is_scalar_integerish(opts$font_size),

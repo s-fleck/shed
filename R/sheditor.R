@@ -7,9 +7,9 @@ sheditor <- R6::R6Class(
         fname  = tempfile(),
         format = shed_format_csv2x,
         locale = readr::locale(),
-        theme  = read_css_theme(getOption("shed.css", system.file("css", "shed_dark.css", package = "shed")))
+        theme  = "default"
       ){
-        self$theme  <- theme
+        self$theme  <- load_theme(theme)
         self$fname  <- fname
         self$format <- format
         self$data   <- x
