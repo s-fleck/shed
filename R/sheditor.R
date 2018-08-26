@@ -380,7 +380,7 @@ prep_input_df <- function(x){
       paste(colnames(res), collapse = ", ")
     )
 
-    header <- as.data.frame(as.list(names(res)))
+    header <- as.data.frame(as.list(names(res)), stringsAsFactors = FALSE)
     names(header) <- paste0("X", seq_along(header))
     names(res)    <- paste0("X", seq_along(header))
 
@@ -389,6 +389,8 @@ prep_input_df <- function(x){
       res
     )
   }
+
+  attr(res, "spec") <- NULL
 
   res
 }
