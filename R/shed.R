@@ -32,55 +32,19 @@
 #'
 #'
 shed <- function(
-  x,
-  file,
+  input,
+  file = if (is.data.frame(input)) tempfile() else input,
   locale = readr::locale(),
   theme = "default"
 ){
-
-  theme <- load_theme(theme)
-
-  # preconditions
-  stopifnot(
-    is_scalar_integerish(opts$font_size),
-    is_css_file(opts$css),
-
-    is.null(file) ||
-    (is_scalar_character(file)) ||
-    (is.data.frame(file)) ||
-    (is_integerish(file) && length(file) %in% 1:2)
+  editor <- sheditor$new(
+    input = input,
+    file = file,
+    locale = locale,
+    theme = theme
   )
 
-  # init
-
-  if (is.null(file)) file <- 1L
-
-  if (is_integerish(file)){
-
-    stopifnot(all(file > 0))
-
-    if (identical(length(file), 1L)){
-      file <- c(1, file)
-    }
-
-    file <- empty_df(file[[1]], file[[2]])
-  }
-
-
-  theme <- paste(
-    paste(readLines(opts$css), collapse = "\n"),
-    sprintf("#hot tr td { font-size: %spx;  }", opts$font_size)
-  )
-
-  fname <- make_outfile_name(file)
-
-  if (is_scalar_character(file) && !file.exists(file)){
-    file <- empty_df(1, 1)
-  }
-
-
-
-  invisible(runApp(shed_app))
+  editor$edit()
 }
 
 
