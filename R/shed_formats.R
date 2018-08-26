@@ -138,8 +138,8 @@ shed_format <- function(
   structure(
     list(
       name = name,
-      read_fun = list(read_fun),
-      write_fun = list(write_fun)
+      read_fun = read_fun,
+      write_fun = write_fun
     ),
     class = "shed_format"
   )

@@ -101,12 +101,10 @@ sheditor <- R6::R6Class(
           # helpers ------------------------------------------------------------
           is_bool <- function(x) identical(x, TRUE) || identical(x, FALSE)
 
-
           # int -----------------------------------------------------------
           values    <- reactiveValues()
-          read_fun  <- .format$read_fun[[1]]
-          write_fun <- .format$write_fun[[1]]
-          .data[]    <- lapply(.data, as.character)
+          read_fun  <- .format$read_fun
+          write_fun <- .format$write_fun
 
 
           # startup -----------------------------------------------------------
@@ -152,8 +150,8 @@ sheditor <- R6::R6Class(
               rhandsontable_shed(values[["output"]])
             } else {
               flog.trace(
-                "'output' is not a data.frame but <%s>",
-                paste(class(values[["output"]]), collapse = "/")
+                "'output' is not a data.frame but %s",
+                fmt_class(values[["output"]])
               )
               NULL
             }
@@ -167,8 +165,7 @@ sheditor <- R6::R6Class(
             flog.trace("Trigger user input HOT update")
 
             if (!is.null(input$hot)) {
-
-              values[["output"]]   <- hot_to_r_safely(input$hot)
+              values[["output"]]   <- prep_input_df(hot_to_r_safely(input$hot))
 
               if (
                 identical(nrow(values[["output"]]), 0L) ||
@@ -316,27 +313,35 @@ sheditor <- R6::R6Class(
 
 
 
-
 has_only_char_cols <- function(x){
   is.data.frame(x) && all(vapply(x, is.character, logical(1)))
 }
 
 
 
+
 assert_only_char_cols <- function(x){
+  if (!is.data.frame(x))
+    stop(flog.fatal("'x' is not a data.frame but %s", fmt_class(x)))
+
+  if (length(x) == 0)
+    stop(flog.fatal("'x' is a zero length data.frame."))
+
   if (!has_only_char_cols(x)){
-    msg <- flog.fatal(paste(
-      "All columns of 'x' must be character but x looks like ths:",
-      toString(str(x)))
-    )
-    stop(msg)
+    stop(flog.fatal(
+      "All columns of 'x' must be character but x are: %s",
+      paste(vapply(x, fmt_class, character(1)), collapse = ", ")
+    ))
   }
+
   TRUE
 }
 
 
 
+
 prep_input_df <- function(x){
+
   if (!is.data.frame(x)){
     stop(flog.fatal("'x' must be a data.frame"))
   }
@@ -355,14 +360,40 @@ prep_input_df <- function(x){
     ))
   }
 
+  res <- x
+
   if (!has_only_char_cols(x)){
-    flog.warn(paste(
+    flog.debug(paste(
       "Autoconverting all columns to character. 'shed' can only handle",
       "data.frames with all-character columns properly. Please ensure that",
       "the 'read_fun' in your 'shed_format' returns such data.frames."
     ))
-    x[] <- lapply(x, as.character)
+    res[] <- lapply(res, as.character)
   }
 
-  x
+  autonames <- paste0("X", seq_along(res))
+  if (is.null(names(res)))  names(res) <- autonames
+
+  if (!identical(names(res), autonames)){
+    flog.trace(
+      "Converting colnames to first data.frame row: %s",
+      paste(colnames(res), collapse = ", ")
+    )
+
+    header <- as.data.frame(as.list(names(res)))
+    names(header) <- paste0("X", seq_along(header))
+    names(res)    <- paste0("X", seq_along(header))
+
+    res <- rbind(
+      header,
+      res
+    )
+  }
+
+  res
 }
+
+
+
+
+fmt_class <- function(x) paste0("<", paste(class(x), collapse = "/"), ">")
