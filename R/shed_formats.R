@@ -1,26 +1,24 @@
-shed_formats <- function(
+shed_format <- function(
   name,
   read_fun,
   write_fun
 ){
   stopifnot(
     is.character(name),
-    is.list(read_fun),
-    is.list(write_fun)
+    is_read_fun(read_fun),
+    is_write_fun(write_fun)
   )
 
-  res <- mapply(
-    function(n, r, w) shed_format(n, r, w),
-    name,
-    read_fun,
-    write_fun,
-    SIMPLIFY = FALSE
+  structure(
+    list(
+      name = name,
+      read_fun = list(read_fun),
+      write_fun = list(write_fun)
+    ),
+    class = "shed_format"
   )
-
-  res <- do.call(rbind, res)
-  class(res) <- union("shed_formats", class(res))
-  res
 }
+
 
 
 
@@ -78,7 +76,6 @@ shed_read_tsv  <- function(
 ){
   flog.debug("Reading tsv file %s with encoding %s", path, locale$encoding)
 
-
   res <- suppressMessages(as.data.frame(
     readr::read_tsv(
       path,
@@ -134,28 +131,6 @@ shed_write_tsv <- function(x, path) {
 
 # formats -----------------------------------------------------------------
 
-shed_format <- function(
-  name,
-  read_fun,
-  write_fun
-){
-  stopifnot(
-    is.character(name),
-    is.function(read_fun),
-    is.function(write_fun)
-  )
-
-  tibble::new_tibble(
-    list(
-      name = name,
-      read_fun = list(read_fun),
-      write_fun = list(write_fun)
-    ),
-    subclass = "shed_format"
-  )
-}
-
-
 shed_format_csv   <- shed_format("csv",   shed_read_csv, shed_write_csv)
 shed_format_csv2  <- shed_format("csv2",  shed_read_csv2, shed_write_csv)
 shed_format_csvx  <- shed_format("csvx",  shed_read_csv, shed_write_excel_csv)
@@ -165,12 +140,13 @@ shed_format_csv2x <- shed_format("csv2x", shed_read_csv2, shed_write_excel_csv)
 
 
 
-# helpers -----------------------------------------------------------------
+# predicates --------------------------------------------------------------
 
 is_read_fun <- function(x){
   is.function(x) &&
   identical(names(formals(x)), c("path", "locale"))
 }
+
 
 
 is_write_fun <- function(x){
