@@ -19,13 +19,17 @@ sheditor <- R6::R6Class(
         x,
         ...
       ){
-        private$app(
+        res <- print(private$app(
           .data   = self$data,
           .fname  = self$fname,
           .format = self$format,
           .theme  = self$theme,
           .locale = self$locale
-        )
+        ))
+        self$data  <- res$data
+        self$fname <- res$fname
+
+        res$data
       },
     fname = NULL,
     data = NULL,
@@ -39,9 +43,11 @@ sheditor <- R6::R6Class(
       .fname,
       .format,
       .locale,
-      .theme
+      .theme,
+      options = list()  # passed on to shinyApp()
     ){
       shiny::shinyApp(
+        options = options,
         ui = fluidPage(
           width = "100%",
           shinyjs::useShinyjs(),
@@ -90,11 +96,7 @@ sheditor <- R6::R6Class(
           values    <- reactiveValues()
           read_fun  <- .format$read_fun[[1]]
           write_fun <- .format$write_fun[[1]]
-          .data[]   <- lapply(.data, as.character)
-          stopifnot(
-            is_read_fun(read_fun),
-            is_write_fun(write_fun)
-          )
+          .data[]    <- lapply(.data, as.character)
 
 
           # startup -----------------------------------------------------------
@@ -102,8 +104,9 @@ sheditor <- R6::R6Class(
             flog.debug("Trigger App Startup")
 
             values[["overwrite"]] <- FALSE
-            values[["modified"]] <- FALSE
-            values[["output"]] <- .data
+            values[["modified"]]  <- FALSE
+            print(.data)
+            values[["output"]]    <- prep_input_df(.data)
 
             stopifnot(
               is.function(read_fun),
@@ -139,7 +142,10 @@ sheditor <- R6::R6Class(
               flog.trace("Trigger HOT render")
               rhandsontable_shed(values[["output"]])
             } else {
-              flog.trace("'output' is not a data.frame")
+              flog.trace(
+                "'output' is not a data.frame but <%s>",
+                paste(class(values[["output"]]), collapse = "/")
+              )
               NULL
             }
           })
@@ -159,9 +165,9 @@ sheditor <- R6::R6Class(
                 identical(nrow(values[["output"]]), 0L) ||
                 identical(ncol(values[["output"]]), 0L)
               ){
-                flog.trace("Trigger HOT render")
                 flog.trace(
-                  "data.frame has illegal dimensions: %sx%s; returning empty 1x1 data.frame instead.",
+                  paste("data.frame has illegal dimensions: %sx%s; returning",
+                    "empty 1x1 data.frame instead."),
                   nrow(values[["output"]]),
                   ncol(values[["output"]])
                 )
@@ -184,11 +190,18 @@ sheditor <- R6::R6Class(
             flog.trace("Trigger save file")
             assert_only_char_cols(values[["output"]])
 
-            is_saved <- tryCatch(
-              expr = {write_fun(values[["output"]], path = input$fname); TRUE},
-              error = function(e) {flog.error(e); FALSE}
+            write_ok <- tryCatch(
+              expr = {
+                write_fun(values[["output"]], path = input$fname)
+                TRUE
+              },
+              error = function(e){
+                flog.error("Write function aborted with error: %s", e)
+                FALSE
+              }
             )
-            is_saved <- is_saved && file.exists(input$fname)
+
+            is_saved <- write_ok && file.exists(input$fname)
 
             if (is_saved){
               values[["output_saved"]] <- values[["output"]]
@@ -227,6 +240,7 @@ sheditor <- R6::R6Class(
             rm(fname)
           })
 
+
           # overwrite modal
           observeEvent(input$modalOverwriteYes, {
             flog.trace("Trigger modalOverwriteYes")
@@ -234,6 +248,7 @@ sheditor <- R6::R6Class(
             save_file()
             removeModal()
           })
+
 
           observeEvent(input$modalOverwriteNo, {
             flog.trace("Trigger modalOverwriteNo")
@@ -251,8 +266,7 @@ sheditor <- R6::R6Class(
                 {
                   flog.info("Loading data from file system: %s", input$fname)
                   output <- read_fun(input$fname, locale = .locale)
-
-                  validate_input_df(output)
+                  output <- prep_input_df(output)
 
                   values[["output"]] <- output
                   values[["output_saved"]] <- output
@@ -274,17 +288,23 @@ sheditor <- R6::R6Class(
           })
 
 
-
           # session end -------------------------------------------------------------
           session$onSessionEnded(function() {
             flog.trace("Trigger Session End")
-            stopApp(parse_output_df(isolate(values[["output"]])))
+            stopApp({
+              sheditor_retval(
+                parse_output_df(isolate(values[["output"]])),
+                isolate(input$fname)
+              )
+            })
           })
-      }
+        }
       )
     }
   )
 )
+
+
 
 
 
@@ -303,4 +323,37 @@ assert_only_char_cols <- function(x){
     stop(msg)
   }
   TRUE
+}
+
+
+
+prep_input_df <- function(x){
+  if (!is.data.frame(x)){
+    stop(flog.fatal("'x' must be a data.frame"))
+  }
+
+  if (nrow(x) > 1000){
+    flog.warn(paste(
+      "Shed is designed for datasets with less than 1000 rows and",
+      "performs badly for larger ones. Input has %s rows."),
+      nrow(x) - 1
+    )
+
+  } else if (nrow(x) > 10000){
+    stop(flog.fatal(paste(
+      "Loading data > 10000 rows is disabled as shed is unusably slow",
+      "for such large datasets. Input has %s rows."), nrow(x) - 1
+    ))
+  }
+
+  if (!has_only_char_cols(x)){
+    flog.warn(paste(
+      "Autoconverting all columns to character. 'shed' can only handle",
+      "data.frames with all-character columns properly. Please ensure that",
+      "the 'read_fun' in your 'shed_format' returns such data.frames."
+    ))
+    x[] <- lapply(x, as.character)
+  }
+
+  x
 }

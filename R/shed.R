@@ -204,27 +204,6 @@ parse_output_df <- function(x){
 
 
 
-
-validate_input_df <- function(x){
-  if (nrow(x) > 1000){
-    flog.warn(
-      paste("Shed is designed for datasets with less than 1000 rows and",
-      "performs badly for larger ones. Input has %s rows."),
-      nrow(x) - 1
-    )
-  }
-
-  if (nrow(x) > 10000){
-    flog.fatal(paste(
-      "Loading data > 10000 rows is disabled as shed is unusably slow",
-      "for such large datasets. Input has %s rows."), nrow(x) - 1
-    ) %>% stop()
-  }
-}
-
-
-
-
 empty_df <- function(rows, cols){
   res <- as.list(rep("", cols))
   res[[1]] <- rep("", rows)

@@ -12,6 +12,7 @@ test_that("sheditor works as expected", {
     fname = tempfile(),
     format = fmt
   )
-  x$edit( )
+
+  y <- x$edit( )
 
 })
