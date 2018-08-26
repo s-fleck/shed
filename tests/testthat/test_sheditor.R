@@ -8,8 +8,8 @@ test_that("sheditor works as expected", {
   )
 
   x <- sheditor$new(
-    x = iris,
-    fname = tempfile(),
+    input = iris,
+    file = tempfile(),
     format = fmt
   )
 
