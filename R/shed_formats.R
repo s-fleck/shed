@@ -151,4 +151,4 @@ shed_format <- function(
 shed_format_csv   <- shed_format("csv",   shed_read_csv, shed_write_csv)
 shed_format_csv2  <- shed_format("csv2",  shed_read_csv2, shed_write_csv2)
 shed_format_csvx  <- shed_format("csvx",  shed_read_csv, shed_write_excel_csv)
-shed_format_csv2x <- shed_format("csv2x", shed_read_csv2, shed_write_excel_csv)
+shed_format_csv2x <- shed_format("csv2x", shed_read_csv2, shed_write_excel_csv2)

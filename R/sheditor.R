@@ -5,7 +5,7 @@ sheditor <- R6::R6Class(
       function(
         input  = NULL,
         file   = if (is.data.frame(input)) tempfile() else input,
-        format = shed_format_csv2x,
+        format = shed_format_csv,
         locale = readr::locale(),
         theme  = "default"
       ){
