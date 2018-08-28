@@ -77,7 +77,7 @@ shed_write_csv  <- function(x, path){
 
 
 shed_write_csv2 <- function(x, path){
-  stop("Not yet supported")
+  write_csv2(x, path, col_names = FALSE, na = "")
 }
 
 
@@ -91,8 +91,6 @@ shed_write_excel_csv  <- function(x, path){
 
 
 shed_write_excel_csv2 <- function(x, path){
-  print(x)
-  print(path)
   readr::write_excel_csv2(x, path, col_names = FALSE, na = "")
 }
 
