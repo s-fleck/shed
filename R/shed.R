@@ -34,12 +34,14 @@
 shed <- function(
   input,
   file = if (is.data.frame(input)) tempfile() else input,
+  format = shed_format_csv,
   locale = readr::locale(),
   theme = "default"
 ){
   editor <- sheditor$new(
     input = input,
     file = file,
+    format = shed_format_csv,
     locale = locale,
     theme = theme
   )
@@ -53,13 +55,20 @@ shed <- function(
 #' @rdname shed
 #' @export
 shed2 <- function(
-  file = NULL
+  input,
+  file = if (is.data.frame(input)) tempfile() else input,
+  locale = readr::locale(),
+  theme = "default"
 ){
-  shed(
+  editor <- sheditor$new(
+    input = input,
     file = file,
-    informat = "csv2",
-    outformat = "csv2"
+    format = shed_format_csv2,
+    locale = locale,
+    theme = theme
   )
+
+  invisible(editor$edit())
 }
 
 
@@ -68,28 +77,43 @@ shed2 <- function(
 #' @rdname shed
 #' @export
 shedx <- function(
-  file = NULL
+  input,
+  file = if (is.data.frame(input)) tempfile() else input,
+  locale = readr::locale(),
+  theme = "default"
 ){
-  shed(
+  editor <- sheditor$new(
+    input = input,
     file = file,
-    informat = "csv2",
-    outformat = "excel_csv2"
+    format = shed_format_csvx,
+    locale = locale,
+    theme = theme
   )
+
+  invisible(editor$edit())
 }
+
 
 
 
 
 #' @rdname shed
 #' @export
-shedx2 <- function(
-  file = NULL
+shed2x <- function(
+  input,
+  file = if (is.data.frame(input)) tempfile() else input,
+  locale = readr::locale(),
+  theme = "default"
 ){
-  shed(
+  editor <- sheditor$new(
+    input = input,
     file = file,
-    informat = "csv2",
-    outformat = "excel_csv2"
+    format = shed_format_csv2x,
+    locale = locale,
+    theme = theme
   )
+
+  invisible(editor$edit())
 }
 
 
