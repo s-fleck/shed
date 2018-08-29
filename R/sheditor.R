@@ -4,19 +4,13 @@ sheditor <- R6::R6Class(
     initialize =
       function(
         input  = NULL,
-        file   = if (is.data.frame(input)) tempfile() else input,
+        file   = if (is_scalar_character(input)) input else tempfile(),
         format = shed_format_csv,
         locale = readr::locale(),
         theme  = "default"
       ){
-        if (is.data.frame(input))
-          self$data <- input
-        else
-          data  <- tryCatch(
-            format$read_fun(input, locale = locale),
-            error = function(e) empty_df(1, 1)
-          )
 
+        self$data   <- handle_input(input, file, format, locale)
         self$theme  <- load_theme(theme)
         self$fname  <- file
         self$format <- format
@@ -38,7 +32,7 @@ sheditor <- R6::R6Class(
         self$data  <- res$data
         self$fname <- res$fname
 
-        res$data
+        invisible(res$data)
       },
     fname = NULL,
     data = NULL,
@@ -105,6 +99,7 @@ sheditor <- R6::R6Class(
           values    <- reactiveValues()
           read_fun  <- .format$read_fun
           write_fun <- .format$write_fun
+          if (!has_colnames_row(.data)) .data <- colnames_to_row(.data)
 
 
           # startup -----------------------------------------------------------
@@ -340,62 +335,128 @@ assert_only_char_cols <- function(x){
 
 
 
-prep_input_df <- function(x){
+handle_input <- function(
+  input,
+  file,
+  format,
+  locale
+){
+  if (is.data.frame(input))
+    return(input)
 
-  if (!is.data.frame(x)){
-    stop(flog.fatal("'x' must be a data.frame"))
-  }
 
-  if (nrow(x) > 1000){
-    flog.warn(paste(
-      "Shed is designed for datasets with less than 1000 rows and",
-      "performs badly for larger ones. Input has %s rows."),
-      nrow(x) - 1
-    )
-
-  } else if (nrow(x) > 10000){
-    stop(flog.fatal(paste(
-      "Loading data > 10000 rows is disabled as shed is unusably slow",
-      "for such large datasets. Input has %s rows."), nrow(x) - 1
+  if (is_scalar_character(input))
+    return(tryCatch(
+      format$read_fun(input, locale = locale),
+      error = function(e) empty_df(1, 1)
     ))
+
+
+  if (is_integerish(input)) {
+    if (length(input) == 1)  return(empty_df(1, input))
+    if (length(input) == 2)  return(empty_df(input[[1]], input[[2]]))
+
+    flog.error("If 'x' is an integer it must be of length `1` (cols) or `2` (rows, cols)")
   }
 
-  res <- x
+  return(empty_df(1, 1))
+}
 
-  if (!has_only_char_cols(x)){
-    flog.debug(paste(
-      "Autoconverting all columns to character. 'shed' can only handle",
-      "data.frames with all-character columns properly. Please ensure that",
-      "the 'read_fun' in your 'shed_format' returns such data.frames."
-    ))
-    res[] <- lapply(res, as.character)
-  }
 
-  autonames <- paste0("X", seq_along(res))
-  if (is.null(names(res)))  names(res) <- autonames
 
-  if (!identical(names(res), autonames)){
-    flog.trace(
-      "Converting colnames to first data.frame row: %s",
-      paste(colnames(res), collapse = ", ")
-    )
 
-    header <- as.data.frame(as.list(names(res)), stringsAsFactors = FALSE)
-    names(header) <- paste0("X", seq_along(header))
-    names(res)    <- paste0("X", seq_along(header))
+prep_input_df <- function(
+  x,
+  recover = function() stop("Preparing data.frame failed")
+){
+  # preconditions
+    ok <- TRUE
 
-    res <- rbind(
-      header,
-      res
-    )
-  }
+    if (!is.data.frame(x)){
+      flog.fatal("'x' must be a data.frame")
+      ok <- FALSE
+    }
 
+    if (nrow(x) > 10000){
+      flog.fatal(paste(
+        "Loading data > 10000 rows is disabled as shed is unusably slow",
+        "for such large datasets. Input has %s rows."), nrow(x) - 1
+      )
+      ok <- FALSE
+    }
+
+    if (!ok) return(recover())
+
+
+  # init
+    res <- data.table::copy(x)
+
+    if (nrow(x) > 1000){
+      flog.warn(paste(
+        "Shed is designed for datasets with less than 1000 rows and",
+        "performs badly for larger ones. Input has %s rows."),
+        nrow(x) - 1
+      )
+    }
+
+    if (!has_only_char_cols(x)){
+      flog.debug(paste(
+        "Autoconverting all columns to character. 'shed' can only handle",
+        "data.frames with all-character columns properly. Please ensure that",
+        "the 'read_fun' in your 'shed_format' returns such data.frames."
+      ))
+      res[] <- lapply(res, as.character)
+    }
+
+  # return
   attr(res, "spec") <- NULL
-
   res
 }
 
 
 
 
-fmt_class <- function(x) paste0("<", paste(class(x), collapse = "/"), ">")
+fmt_class <- function(x){
+  paste0("<", paste(class(x), collapse = "/"), ">")
+}
+
+
+
+
+make_default_names <- function(x){
+  paste0("X", seq.int(1, x))
+}
+
+
+
+
+colnames_to_row <- function(x){
+  stopifnot(
+    is.data.frame(x),
+    !is.null(names(x)),
+    is.null(attr(x, "has_colnames_row"))
+  )
+
+  coldf        <- as.data.frame(as.list(names(x)), stringsAsFactors = FALSE)
+  names(x)     <- make_default_names(length(x))
+  names(coldf) <- make_default_names(length(x))
+
+  res <- rbind(coldf, x)
+  attr(res, "has_colnames_row") <- TRUE
+  res
+}
+
+
+
+
+has_colnames_row <- function(x){
+  isTRUE(attr(x, "has_colnames_row"))
+}
+
+
+
+
+`has_colnames_row<-` <- function(x, value){
+  attr(x, "has_colnames_row") <- value
+  x
+}

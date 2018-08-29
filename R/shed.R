@@ -33,7 +33,7 @@
 #'
 shed <- function(
   input,
-  file = if (is.data.frame(input)) tempfile() else input,
+  file   = if (is_scalar_character(input)) input else tempfile(),
   format = shed_format_csv,
   locale = readr::locale(),
   theme = "default"
@@ -56,7 +56,7 @@ shed <- function(
 #' @export
 shed2 <- function(
   input,
-  file = if (is.data.frame(input)) tempfile() else input,
+  file   = if (is_scalar_character(input)) input else tempfile(),
   locale = readr::locale(),
   theme = "default"
 ){
@@ -78,7 +78,7 @@ shed2 <- function(
 #' @export
 shedx <- function(
   input,
-  file = if (is.data.frame(input)) tempfile() else input,
+  file   = if (is_scalar_character(input)) input else tempfile(),
   locale = readr::locale(),
   theme = "default"
 ){
@@ -101,7 +101,7 @@ shedx <- function(
 #' @export
 shed2x <- function(
   input,
-  file = if (is.data.frame(input)) tempfile() else input,
+  file   = if (is_scalar_character(input)) input else tempfile(),
   locale = readr::locale(),
   theme = "default"
 ){
@@ -195,7 +195,11 @@ parse_output_df <- function(x){
 
 
 
-empty_df <- function(rows, cols){
+empty_df <- function(
+  rows = 1,
+  cols = 1
+){
+  flog.trace("Generating empty %sx%s data.frame", rows, cols)
   res <- as.list(rep("", cols))
   res[[1]] <- rep("", rows)
   res <- as.data.frame(res, stringsAsFactors = FALSE)

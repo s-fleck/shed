@@ -15,6 +15,7 @@ shed_read_csv   <- function(
   )
 
   mostattributes(res) <- NULL
+  has_colnames_row(res) <- TRUE
   flog.trace("Loaded data.frame: \n%s", to_string(head(res)))
   res
 }
@@ -38,7 +39,7 @@ shed_read_csv2  <- function(
   ))
 
   mostattributes(res) <- NULL
-
+  has_colnames_row(res) <- TRUE
   flog.trace("Loaded data.frame: \n%s", to_string(head(res)))
   res
 }
@@ -62,6 +63,7 @@ shed_read_tsv  <- function(
   ))
 
   mostattributes(res) <- NULL
+  has_colnames_row(res) <- TRUE
   flog.trace("Loaded data.frame: \n%s", to_string(head(res)))
   res
 }
