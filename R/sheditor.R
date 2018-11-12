@@ -19,9 +19,11 @@ sheditor <- R6::R6Class(
       },
     edit =
       function(
-        x,
-        ...
+        x = NULL
       ){
+        if (!is.null(x))
+          self$fname <- x
+
         res <- print(private$app(
           .data   = self$data,
           .fname  = self$fname,
@@ -61,6 +63,7 @@ sheditor <- R6::R6Class(
               js_add_ctrl_hotkey("$('#btnSave').click()", key = c(83))
             ))
           ),
+
 
           fixedPanel(
             id = "panelTop",
@@ -317,13 +320,13 @@ has_only_char_cols <- function(x){
 
 assert_only_char_cols <- function(x){
   if (!is.data.frame(x))
-    stop(flog.fatal("'x' is not a data.frame but %s", fmt_class(x)))
+    stop(FATAL("'x' is not a data.frame but %s", fmt_class(x)))
 
   if (length(x) == 0)
-    stop(flog.fatal("'x' is a zero length data.frame."))
+    stop(FATAL("'x' is a zero length data.frame."))
 
   if (!has_only_char_cols(x)){
-    stop(flog.fatal(
+    stop(FATAL(
       "All columns of 'x' must be character but x are: %s",
       paste(vapply(x, fmt_class, character(1)), collapse = ", ")
     ))
@@ -373,12 +376,12 @@ prep_input_df <- function(
     ok <- TRUE
 
     if (!is.data.frame(x)){
-      flog.fatal("'x' must be a data.frame")
+      FATAL("'x' must be a data.frame")
       ok <- FALSE
     }
 
     if (nrow(x) > 10000){
-      flog.fatal(paste(
+      FATAL(paste(
         "Loading data > 10000 rows is disabled as shed is unusably slow",
         "for such large datasets. Input has %s rows."), nrow(x) - 1
       )

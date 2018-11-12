@@ -41,7 +41,7 @@ shed <- function(
   editor <- sheditor$new(
     input = input,
     file = file,
-    format = shed_format_csv,
+    format = format,
     locale = locale,
     theme = theme
   )
