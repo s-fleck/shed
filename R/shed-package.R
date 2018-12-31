@@ -16,7 +16,7 @@
 
   assign(
     "lg",
-    lgr::Logger$new(name = "shed"),
+    lgr::Logger$new(name = "shed", threshold = 400L),
     envir = parent.env(environment())
   )
 

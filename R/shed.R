@@ -23,9 +23,10 @@
 #' @export
 #'
 #' @examples
-#'
-#' \dontrun{
+#' \donttest{
 #' shed(iris)
+#' }
+#' \dontrun{
 #' shed(4)  # Empty table with 4 columns
 #' shed(c(2, 4))  # Empty table with 2 rows and 4 columns
 #' }

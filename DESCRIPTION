@@ -1,20 +1,25 @@
-Package: shed
 Type: Package
+Package: shed
 Title: Shiny CSV Editor
-Version: 0.0.3.9008
-Authors@R: person("Stefan", "Fleck", email = "stefan.b.fleck@gmail.com", role = c("aut", "cre"))
+Version: 0.0.3.9009
+Authors@R: 
+    person(given = "Stefan",
+           family = "Fleck",
+           role = c("aut", "cre"),
+           comment = c(ORCID = "0000-0003-3344-9851"))
 Maintainer: Stefan Fleck <stefan.b.fleck@gmail.com>
-Description: A minimal csv file editor based on 'shiny' and 'rhandsontable'.
+Description: A minimal csv file editor based on 'shiny' and
+    'rhandsontable'.
 License: MIT + file LICENSE
-Encoding: UTF-8
 Imports: 
-  shiny, 
-  rhandsontable, 
-  readr (>= 1.3.0), 
-  lgr,
-  shinyjs
-LazyData: true
-Roxygen: list(markdown = TRUE)
-RoxygenNote: 6.1.0
+    lgr,
+    readr (>= 1.3.0),
+    rhandsontable,
+    shiny,
+    shinyjs
 Suggests: 
     testthat
+Encoding: UTF-8
+LazyData: true
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 6.1.1

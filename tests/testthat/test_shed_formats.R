@@ -13,14 +13,15 @@ test_that("shed_formats works as expected", {
   )
 
   tdat <- prep_input_df(iris)
+  tres <- iris
+  tres$Species <- as.character(tres$Species)
 
   for (fmt in fmts){
-    fmt$write_fun(tdat, tf)
+    fmt$write_fun(colnames_to_row(tdat), tf)
     expect_equal(
-      tdat,
-      prep_input_df(fmt$read_fun(tf, locale = readr::locale()))
+      tres,
+      parse_output_df(fmt$read_fun(tf, locale = readr::locale())),
+      check.attributes = FALSE
     )
   }
-
-
 })

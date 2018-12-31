@@ -41,5 +41,4 @@ test_that("shed works as expected", {
       stringsAsFactors = FALSE
     )
   )
-
 })
