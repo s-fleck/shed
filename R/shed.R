@@ -138,10 +138,10 @@ guess_encoding2 <- function(path, default = "UTF-8"){
 
   if (nrow(dd) > 0){
     res <- dd[[1, 1]]
-    flog.debug("Guessed Encoding: %s", res)
+    lg$debug("Guessed Encoding: %s", res)
   } else {
     res <- default
-    flog.debug("Could not determine encoding. Falling back to %s", default)
+    lg$debug("Could not determine encoding. Falling back to %s", default)
   }
 
   res
@@ -199,7 +199,7 @@ empty_df <- function(
   rows = 1,
   cols = 1
 ){
-  flog.trace("Generating empty %sx%s data.frame", rows, cols)
+  lg$trace("Generating empty %sx%s data.frame", rows, cols)
   res <- as.list(rep("", cols))
   res[[1]] <- rep("", rows)
   res <- as.data.frame(res, stringsAsFactors = FALSE)
@@ -214,8 +214,8 @@ hot_to_r_safely <- function(...){
   res <- tryCatch(
     hot_to_r(...),
     error = function(e) {
-      flog.error(e)
-      flog.debug("Cannot convert Handsontable, returning empty 0x0 data.frame instead.")
+      lg$error(e)
+      lg$debug("Cannot convert Handsontable, returning empty 0x0 data.frame instead.")
       empty_df(0, 0)
     }
   )
@@ -223,7 +223,7 @@ hot_to_r_safely <- function(...){
   stopifnot(is.data.frame(res))
 
   if (identical(nrow(res), 0L) || identical(ncol(res), 0L)){
-    flog.debug("Cannot handle zero-row data.frame, returning empty 0x0 data.frame instead.")
+    lg$debug("Cannot handle zero-row data.frame, returning empty 0x0 data.frame instead.")
     empty_df(0, 0)
   } else {
     res

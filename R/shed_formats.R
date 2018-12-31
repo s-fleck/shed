@@ -4,7 +4,7 @@ shed_read_csv   <- function(
   path,
   locale
 ){
-  flog.debug("Reading file %s with encoding %s", path, locale$encoding)
+  lg$debug("Reading file %s with encoding %s", path, locale$encoding)
 
   res <- as.data.frame(
     readr::read_csv(
@@ -16,7 +16,7 @@ shed_read_csv   <- function(
 
   mostattributes(res) <- NULL
   has_colnames_row(res) <- TRUE
-  flog.trace("Loaded data.frame: \n%s", to_string(head(res)))
+  lg$trace("Loaded data.frame: \n%s", to_string(head(res)))
   res
 }
 
@@ -27,7 +27,7 @@ shed_read_csv2  <- function(
   path,
   locale
 ){
-  flog.debug("Reading file %s with encoding %s", path, locale$encoding)
+  lg$debug("Reading file %s with encoding %s", path, locale$encoding)
 
   res <- suppressMessages(as.data.frame(
     readr::read_csv2(
@@ -40,7 +40,7 @@ shed_read_csv2  <- function(
 
   mostattributes(res) <- NULL
   has_colnames_row(res) <- TRUE
-  flog.trace("Loaded data.frame: \n%s", to_string(head(res)))
+  lg$trace("Loaded data.frame: \n%s", to_string(head(res)))
   res
 }
 
@@ -51,7 +51,7 @@ shed_read_tsv  <- function(
   path,
   locale
 ){
-  flog.debug("Reading tsv file %s with encoding %s", path, locale$encoding)
+  lg$debug("Reading tsv file %s with encoding %s", path, locale$encoding)
 
   res <- suppressMessages(as.data.frame(
     readr::read_tsv(
@@ -64,7 +64,7 @@ shed_read_tsv  <- function(
 
   mostattributes(res) <- NULL
   has_colnames_row(res) <- TRUE
-  flog.trace("Loaded data.frame: \n%s", to_string(head(res)))
+  lg$trace("Loaded data.frame: \n%s", to_string(head(res)))
   res
 }
 
@@ -79,7 +79,7 @@ shed_write_csv  <- function(x, path){
 
 
 shed_write_csv2 <- function(x, path){
-  write_csv2(x, path, col_names = FALSE, na = "")
+  readr::write_csv2(x, path, col_names = FALSE, na = "")
 }
 
 

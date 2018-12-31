@@ -14,5 +14,11 @@
   toset <- !(names(op.default) %in% names(op))
   if(any(toset)) options(op.default[toset])
 
+  assign(
+    "lg",
+    lgr::Logger$new(name = "shed"),
+    envir = parent.env(environment())
+  )
+
   invisible()
 }
