@@ -6,6 +6,7 @@ Authors@R:
     person(given = "Stefan",
            family = "Fleck",
            role = c("aut", "cre"),
+           email = "stefan.b.fleck@gmail.com",
            comment = c(ORCID = "0000-0003-3344-9851"))
 Maintainer: Stefan Fleck <stefan.b.fleck@gmail.com>
 Description: A minimal csv file editor based on 'shiny' and

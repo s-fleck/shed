@@ -1,13 +1,13 @@
-context("sheditor")
+context("Sheditor")
 
 
-test_that("sheditor works as expected", {
+test_that("Sheditor works as expected", {
 
   fmt <- shed_format(
     "csv", shed:::shed_read_csv,  shed:::shed_write_csv
   )
 
-  x <- sheditor$new(
+  x <- Sheditor$new(
     input = iris,
     file = tempfile(),
     format = fmt

@@ -39,7 +39,7 @@ shed <- function(
   locale = readr::locale(),
   theme = "default"
 ){
-  editor <- sheditor$new(
+  editor <- Sheditor$new(
     input = input,
     file = file,
     format = format,
@@ -61,7 +61,7 @@ shed2 <- function(
   locale = readr::locale(),
   theme = "default"
 ){
-  editor <- sheditor$new(
+  editor <- Sheditor$new(
     input = input,
     file = file,
     format = shed_format_csv2,
@@ -83,7 +83,7 @@ shedx <- function(
   locale = readr::locale(),
   theme = "default"
 ){
-  editor <- sheditor$new(
+  editor <- Sheditor$new(
     input = input,
     file = file,
     format = shed_format_csvx,
@@ -106,7 +106,7 @@ shed2x <- function(
   locale = readr::locale(),
   theme = "default"
 ){
-  editor <- sheditor$new(
+  editor <- Sheditor$new(
     input = input,
     file = file,
     format = shed_format_csv2x,

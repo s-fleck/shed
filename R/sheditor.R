@@ -1,5 +1,46 @@
-sheditor <- R6::R6Class(
-  "sheditor",
+#' Shedditor
+#'
+#' A `Shedditor` manages a single on-disc plaintext file (usually .csv). It is
+#' the engine that powers function [shed()].
+#'
+#' @eval r6_usage(Sheditor)
+#'
+#' @section Creating a new Sheditor:
+#'
+
+#' @section Fields:
+#'
+#' \describe{
+#'   \item{`fname`}{}
+#'
+#'   \item{`data`}{}
+#'
+#'   \item{`format`}{}
+#'
+#'   \item{`theme`}{}
+#'
+#'   \item{`locale`}{}
+#' }
+#'
+#' @section Methods:
+#'
+#' \describe{
+#'   \item{`edit`}{}
+#' }
+#'
+#' @section Active Bindings:
+#'
+#'
+#' @name Sheditor
+#' @aliases sheditor
+#'
+NULL
+
+
+
+
+Sheditor <- R6::R6Class(
+  "Sheditor",
   public = list(
     initialize =
       function(
@@ -296,7 +337,7 @@ sheditor <- R6::R6Class(
           session$onSessionEnded(function() {
             lg$trace("Trigger Session End")
             stopApp({
-              sheditor_retval(
+              Sheditor_retval(
                 parse_output_df(isolate(values[["output"]])),
                 isolate(input$fname)
               )
