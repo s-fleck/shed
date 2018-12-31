@@ -2,6 +2,8 @@
 
 export(shed)
 export(shed2)
+export(shedx)
+export(shedx2)
 import(futile.logger)
 import(rhandsontable)
 import(shiny)

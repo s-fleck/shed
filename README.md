@@ -12,6 +12,8 @@ A minimal, eye-friendly csv editor made with shiny, rhandsontable and readr. She
 Development status
 ------------------
 
+**shed is currently beeing rewritten. A finished CRAN ready version is planned for mid 2019 as I wanna finish some other projects first**
+
 shed is perfectly usable and the internals are more or less stable. The user interface might still change a bit, especially how files are read and written. There is also an [issue in rhandsontable](https://github.com/jrowen/rhandsontable/issues/264) which I want to see fixed - or figure out a workaround for - before I plan on putting shed on CRAN.
 
 If you have any feature requests or comments don't hesitate to file an issue or send a mail.

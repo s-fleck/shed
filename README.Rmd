@@ -27,6 +27,9 @@ by default.
 
 Development status
 ------------------
+
+**shed is currently beeing rewritten. A finished CRAN ready version is planned for mid 2019 as I wanna finish some other projects first**
+
 shed is perfectly usable and the internals are more or less stable. The user
 interface might still change a bit, especially how files are read and written.
 There is also an 
