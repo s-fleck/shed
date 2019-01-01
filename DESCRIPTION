@@ -24,3 +24,13 @@ Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 6.1.1
+Collate: 
+    'read_css_theme.R'
+    'shed-package.R'
+    'shed.R'
+    'utils-sfmisc.R'
+    'shed_formats.R'
+    'sheditor.R'
+    'sheditor_retval.R'
+    'utils-rd.R'
+    'utils.R'

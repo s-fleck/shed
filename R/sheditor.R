@@ -50,7 +50,6 @@ Sheditor <- R6::R6Class(
         locale = readr::locale(),
         theme  = "default"
       ){
-
         self$data   <- handle_input(input, file, format, locale)
         self$theme  <- load_theme(theme)
         self$fname  <- file
@@ -141,8 +140,6 @@ Sheditor <- R6::R6Class(
 
           # int -----------------------------------------------------------
           values    <- reactiveValues()
-          read_fun  <- .format$read_fun
-          write_fun <- .format$write_fun
           if (!has_colnames_row(.data)) .data <- colnames_to_row(.data)
 
 
@@ -155,8 +152,7 @@ Sheditor <- R6::R6Class(
             values[["output"]]    <- prep_input_df(.data)
 
             stopifnot(
-              is.function(read_fun),
-              is.function(write_fun),
+              is_ShedFormat(.format),
               is.data.frame(values[["output"]]),
               is_bool(values[["modified"]]),
               is_bool(values[["overwrite"]])
@@ -199,7 +195,7 @@ Sheditor <- R6::R6Class(
 
           # i/o -----------------------------------------------------------------
 
-          # . edit hot ----------------------------------------------------------
+          # +- edit hot ----------------------------------------------------------
           observeEvent(input$hot, {
             lg$trace("Trigger user input HOT update")
 
@@ -230,14 +226,14 @@ Sheditor <- R6::R6Class(
           })
 
 
-          # . save --------------------------------------------------------------
+          # +- save --------------------------------------------------------------
           save_file <- function(){
             lg$trace("Trigger save file")
             assert_only_char_cols(values[["output"]])
 
             write_ok <- tryCatch(
               expr = {
-                write_fun(values[["output"]], path = input$fname)
+                self$format$write(values[["output"]], path = input$fname)
                 TRUE
               },
               error = function(e){
@@ -302,7 +298,7 @@ Sheditor <- R6::R6Class(
           })
 
 
-          # . load --------------------------------------------------------------------
+          # +- load --------------------------------------------------------------------
           observeEvent(input$btnLoad, {
             lg$trace("Trigger Load Button")
 
@@ -310,7 +306,7 @@ Sheditor <- R6::R6Class(
               tryCatch(
                 {
                   lg$info("Loading data from file system: %s", input$fname)
-                  output <- read_fun(input$fname, locale = .locale)
+                  output <- self$format$read(input$fname, locale = .locale)
                   output <- prep_input_df(output)
 
                   values[["output"]] <- output
@@ -337,7 +333,7 @@ Sheditor <- R6::R6Class(
           session$onSessionEnded(function() {
             lg$trace("Trigger Session End")
             stopApp({
-              Sheditor_retval(
+              sheditor_retval(
                 parse_output_df(isolate(values[["output"]])),
                 isolate(input$fname)
               )
@@ -391,7 +387,7 @@ handle_input <- function(
 
   if (is_scalar_character(input))
     return(tryCatch(
-      format$read_fun(input, locale = locale),
+      format$read(input, locale = locale),
       error = function(e) empty_df(1, 1)
     ))
 
@@ -447,7 +443,7 @@ prep_input_df <- function(
       lg$debug(paste(
         "Autoconverting all columns to character. 'shed' can only handle",
         "data.frames with all-character columns properly. Please ensure that",
-        "the 'read_fun' in your 'shed_format' returns such data.frames."
+        "the `read()` in your `ShedFormat` returns such data.frames."
       ))
       res[] <- lapply(res, as.character)
     }

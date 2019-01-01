@@ -17,10 +17,10 @@ test_that("shed_formats works as expected", {
   tres$Species <- as.character(tres$Species)
 
   for (fmt in fmts){
-    fmt$write_fun(colnames_to_row(tdat), tf)
+    fmt$write(colnames_to_row(tdat), tf)
     expect_equal(
       tres,
-      parse_output_df(fmt$read_fun(tf, locale = readr::locale())),
+      parse_output_df(fmt$read(tf, locale = readr::locale())),
       check.attributes = FALSE
     )
   }

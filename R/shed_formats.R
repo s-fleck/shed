@@ -1,4 +1,33 @@
+# ShedFormat --------------------------------------------------------------
+#' @include utils-sfmisc.R
+#'
+ShedFormat <-  R6::R6Class(
+  "ShedFormat",
+  public = list(
+    initialize = function(
+      read_fun,
+      write_fun
+    ){
+      stopifnot(
+        is_read_fun(read_fun),
+        is_write_fun(write_fun)
+      )
+      self$read  <- read_fun
+      self$write <- write_fun
+    },
+    read  = NULL,
+    write = NULL
+  )
+)
+
+
+
+is_ShedFormat <- function(x){
+  is(x, "ShedFormat")
+}
+
 # rw funs -----------------------------------------------------------------
+
 
 shed_read_csv   <- function(
   path,
@@ -124,31 +153,14 @@ is_write_fun <- function(x){
 
 # formats -----------------------------------------------------------------
 
-shed_format <- function(
-  name,
-  read_fun,
-  write_fun
-){
-  stopifnot(
-    is.character(name),
-    is_read_fun(read_fun),
-    is_write_fun(write_fun)
-  )
-
-  structure(
-    list(
-      name = name,
-      read_fun = read_fun,
-      write_fun = write_fun
-    ),
-    class = "shed_format"
-  )
-}
 
 
 
 
-shed_format_csv   <- shed_format("csv",   shed_read_csv, shed_write_csv)
-shed_format_csv2  <- shed_format("csv2",  shed_read_csv2, shed_write_csv2)
-shed_format_csvx  <- shed_format("csvx",  shed_read_csv, shed_write_excel_csv)
-shed_format_csv2x <- shed_format("csv2x", shed_read_csv2, shed_write_excel_csv2)
+
+
+
+shed_format_csv   <- ShedFormat$new(shed_read_csv, shed_write_csv)
+shed_format_csv2  <- ShedFormat$new(shed_read_csv2, shed_write_csv2)
+shed_format_csvx  <- ShedFormat$new(shed_read_csv, shed_write_excel_csv)
+shed_format_csv2x <- ShedFormat$new(shed_read_csv2, shed_write_excel_csv2)
