@@ -143,7 +143,7 @@ Sheditor <- R6::R6Class(
 
           # startup -----------------------------------------------------------
           observeEvent(TRUE, once = TRUE, {
-            lg$debug("Trigger App Startup")
+            lg$trace("Trigger action", trigger = "startApp")
 
             values[["overwrite"]] <- FALSE
             values[["modified"]]  <- FALSE
@@ -160,17 +160,17 @@ Sheditor <- R6::R6Class(
 
           # infile ui -----------------------------------------------------------
           observe({
-            lg$trace("Trigger input file color change")
+            lg$trace("Activated trigger", trigger = "InputFileColorChange")
 
             if(!file.exists(input$file)){
               values[["modified"]] <- TRUE
             }
 
             if (isTRUE(values[["modified"]])){
-              lg$trace("Input file color changed to NotSaved")
+              lg$trace("Input file color changed to 'NotSaved'")
               shinyjs::runjs('document.getElementById("fileDiv").className  = "fileNotSaved";')
             } else {
-              lg$trace("Input file color changed to Saved")
+              lg$trace("Input file color changed to 'Saved'")
               shinyjs::runjs('document.getElementById("fileDiv").className  = "fileSaved";')
             }
           })
@@ -179,11 +179,11 @@ Sheditor <- R6::R6Class(
           # render hot ---------------------------------------------------------
           output$hot <- renderRHandsontable({
             if (is.data.frame(values[["output"]])){
-              lg$trace("Trigger HOT render")
+              lg$trace("Activated trigger", trigger = "renderHOT")
               rhandsontable_shed(values[["output"]])
             } else {
               lg$trace(
-                "'output' is not a data.frame but %s",
+                "`output` is not a data.frame but %s",
                 fmt_class(values[["output"]])
               )
               NULL
@@ -195,7 +195,7 @@ Sheditor <- R6::R6Class(
 
           # +- edit hot ----------------------------------------------------------
           observeEvent(input$hot, {
-            lg$trace("Trigger user input HOT update")
+            lg$trace("Activated trigger", trigger = "userModifiedHot")
 
             if (!is.null(input$hot)) {
               values[["output"]]   <- prep_input_df(hot_to_r_safely(input$hot))
@@ -226,7 +226,7 @@ Sheditor <- R6::R6Class(
 
           # +- save --------------------------------------------------------------
           save_file <- function(){
-            lg$trace("Trigger save file")
+            lg$trace("Activated trigger", trigger = "saveFile")
             assert_only_char_cols(values[["output"]])
 
             write_ok <- tryCatch(
@@ -245,27 +245,31 @@ Sheditor <- R6::R6Class(
             if (is_saved){
               values[["output_saved"]] <- values[["output"]]
               values[["modified"]] <- FALSE
-              lg$info("Saved to %s", input$file)
+              lg$info("Saving file", file = input$file)
 
             } else {
-              lg$error("Could not save file to '%s'", input$file)
+              lg$error("Could not save file", file = input$file)
             }
           }
 
 
           observeEvent(input$btnSave, {
-            lg$trace("Trigger Save Button")
+            lg$trace("Activated trigger", trigger = "btnSave")
             file  <- input$file
             overwrite <- values[["overwrite"]]
 
             lg$trace("Target file %s", file)
             lg$trace("Overwrite is set to %s", overwrite)
 
-            if (!file.exists(file) || isTRUE(overwrite)){
+            if (!file.exists(file)){
+              save_file()
+
+            } else if (isTRUE(overwrite)){
+              lg$debug("Overwriting existing file")
               save_file()
 
             } else {
-              lg$trace("Trigger Overwrite Modal")
+              lg$trace("Activated trigger", trigger = "overwriteModal")
               showModal(shiny::modalDialog(
                 size = "s",
                 div("Overwrite existing file?", style = "height: 40px; " ),
@@ -282,7 +286,7 @@ Sheditor <- R6::R6Class(
 
           # overwrite modal
           observeEvent(input$modalOverwriteYes, {
-            lg$trace("Trigger modalOverwriteYes")
+            lg$trace("Activated trigger", trigger = "modalOverwriteYes")
             values[["overwrite"]] <- TRUE
             save_file()
             removeModal()
@@ -290,20 +294,20 @@ Sheditor <- R6::R6Class(
 
 
           observeEvent(input$modalOverwriteNo, {
-            lg$trace("Trigger modalOverwriteNo")
-            lg$info("Not saved")
+            lg$trace("Activated trigger", trigger = "modalOverwriteNo")
+            lg$info("File not saved")
             removeModal()
           })
 
 
           # +- load --------------------------------------------------------------------
           observeEvent(input$btnLoad, {
-            lg$trace("Trigger Load Button")
+            lg$trace("Activated trigger", trigger = "btnLoad")
 
             if (file.exists(input$file)){
               tryCatch(
                 {
-                  lg$info("Loading data from file system: %s", input$file)
+                  lg$info("Loading file", file = input$file)
                   output <- self$format$read(input$file, locale = .locale)
                   output <- prep_input_df(output)
 
@@ -314,13 +318,16 @@ Sheditor <- R6::R6Class(
                   rm(output)
                 },
                 error = function(e) {
-                  lg$error("Input file exists but cannot be read %s", input$file)
-                  lg$error("Reason: %s", e)
+                  lg$error(
+                    "Input file exists but cannot be read",
+                    file = input$file,
+                    error = e
+                  )
                 }
               )
 
             } else {
-              lg$error("Input file does not exist: %s", input$file)
+              lg$error("Input file does not exist", file = input$file)
             }
 
             assert_only_char_cols(values[["output"]])
@@ -343,15 +350,15 @@ has_only_char_cols <- function(x){
 
 assert_only_char_cols <- function(x){
   if (!is.data.frame(x))
-    stop(lg$fatal("'x' is not a data.frame but %s", fmt_class(x)))
+    stop(lg$fatal("`x` is not a data.frame but %s", fmt_class(x)))
 
   if (length(x) == 0)
-    stop(lg$fatal("'x' is a zero length data.frame."))
+    stop(lg$fatal("`x` is a data.frame without columns"))
 
   if (!has_only_char_cols(x)){
     stop(lg$fatal(
-      "All columns of 'x' must be character but x are: %s",
-      paste(vapply(x, fmt_class, character(1)), collapse = ", ")
+      "All columns of `x` must be of type `character`.",
+      column_types = paste(vapply(x, fmt_class, character(1)), collapse = ", ")
     ))
   }
 
@@ -382,7 +389,10 @@ handle_input <- function(
     if (length(input) == 1)  return(empty_df(1, input))
     if (length(input) == 2)  return(empty_df(input[[1]], input[[2]]))
 
-    lg$error("If 'x' is an integer it must be of length `1` (cols) or `2` (rows, cols)")
+    lg$error(
+      "If input is an integer it must be of length `1` (cols) or `2` (rows, cols)",
+      input = input
+    )
   }
 
   return(empty_df(1, 1))
@@ -399,30 +409,29 @@ prep_input_df <- function(
     ok <- TRUE
 
     if (!is.data.frame(x)){
-      lg$fatal("'x' must be a data.frame")
+      lg$fatal("input must be a data.frame")
       ok <- FALSE
     }
 
     if (nrow(x) > 10000){
-      lg$fatal(paste(
-        "Loading data > 10000 rows is disabled as shed is unusably slow",
-        "for such large datasets. Input has %s rows."), nrow(x) - 1
+      lg$fatal(
+        "Dataset to large: Only up to 10000 rows are supported",
+        rows = nrow(x) - 1
       )
       ok <- FALSE
     }
 
     if (!ok) return(recover())
 
-
   # init
     res <- data.table::copy(x)
 
     if (nrow(x) > 1000){
       lg$warn(paste(
-        "Shed is designed for datasets with less than 1000 rows and",
-        "performs badly for larger ones. Input has %s rows."),
-        nrow(x) - 1
-      )
+        "Large dataset: shed is designed for datasets with less than 1000",
+        "rows. Viewing and editing the table might be slow.",
+        rows = nrow(x) - 1
+      ))
     }
 
     if (!has_only_char_cols(x)){
