@@ -11,7 +11,7 @@
 #' @section Fields:
 #'
 #' \describe{
-#'   \item{`fname`}{}
+#'   \item{`file`}{}
 #'
 #'   \item{`data`}{}
 #'
@@ -52,7 +52,7 @@ Sheditor <- R6::R6Class(
       ){
         self$data   <- handle_input(input, file, format, locale)
         self$theme  <- load_theme(theme)
-        self$fname  <- file
+        self$file  <- file
         self$format <- format
         self$locale <- locale
 
@@ -62,21 +62,19 @@ Sheditor <- R6::R6Class(
         x = NULL
       ){
         if (!is.null(x))
-          self$fname <- x
+          self$file <- x
 
         res <- print(private$app(
           .data   = self$data,
-          .fname  = self$fname,
+          .file  = self$file,
           .format = self$format,
           .theme  = self$theme,
           .locale = self$locale
         ))
-        self$data  <- res$data
-        self$fname <- res$fname
 
-        invisible(res$data)
+        invisible(self)
       },
-    fname = NULL,
+    file = NULL,
     data = NULL,
     format = NULL,
     theme = NULL,
@@ -86,7 +84,7 @@ Sheditor <- R6::R6Class(
   private = list(
     app = function(
       .data,
-      .fname,
+      .file,
       .format,
       .locale,
       .theme,
@@ -111,8 +109,8 @@ Sheditor <- R6::R6Class(
             left = 0,
             right = 0,
             div(
-              class = "shedFnameContainer",
-              div(textInput("fname", NULL, .fname, width = "100%"), class = "fnameSaved", id = "fnameDiv")
+              class = "shedFileContainer",
+              div(textInput("file", NULL, .file, width = "100%"), class = "fileSaved", id = "fileDiv")
             ),
             div(
               class = "shedCtrl",
@@ -164,16 +162,16 @@ Sheditor <- R6::R6Class(
           observe({
             lg$trace("Trigger input file color change")
 
-            if(!file.exists(input$fname)){
+            if(!file.exists(input$file)){
               values[["modified"]] <- TRUE
             }
 
             if (isTRUE(values[["modified"]])){
               lg$trace("Input file color changed to NotSaved")
-              shinyjs::runjs('document.getElementById("fnameDiv").className  = "fnameNotSaved";')
+              shinyjs::runjs('document.getElementById("fileDiv").className  = "fileNotSaved";')
             } else {
               lg$trace("Input file color changed to Saved")
-              shinyjs::runjs('document.getElementById("fnameDiv").className  = "fnameSaved";')
+              shinyjs::runjs('document.getElementById("fileDiv").className  = "fileSaved";')
             }
           })
 
@@ -233,7 +231,7 @@ Sheditor <- R6::R6Class(
 
             write_ok <- tryCatch(
               expr = {
-                self$format$write(values[["output"]], path = input$fname)
+                self$format$write(values[["output"]], path = input$file)
                 TRUE
               },
               error = function(e){
@@ -242,28 +240,28 @@ Sheditor <- R6::R6Class(
               }
             )
 
-            is_saved <- write_ok && file.exists(input$fname)
+            is_saved <- write_ok && file.exists(input$file)
 
             if (is_saved){
               values[["output_saved"]] <- values[["output"]]
               values[["modified"]] <- FALSE
-              lg$info("Saved to %s", input$fname)
+              lg$info("Saved to %s", input$file)
 
             } else {
-              lg$error("Could not save file to '%s'", input$fname)
+              lg$error("Could not save file to '%s'", input$file)
             }
           }
 
 
           observeEvent(input$btnSave, {
             lg$trace("Trigger Save Button")
-            fname  <- input$fname
+            file  <- input$file
             overwrite <- values[["overwrite"]]
 
-            lg$trace("Target file %s", fname)
+            lg$trace("Target file %s", file)
             lg$trace("Overwrite is set to %s", overwrite)
 
-            if (!file.exists(fname) || isTRUE(overwrite)){
+            if (!file.exists(file) || isTRUE(overwrite)){
               save_file()
 
             } else {
@@ -278,7 +276,7 @@ Sheditor <- R6::R6Class(
             }
 
             rm(overwrite)
-            rm(fname)
+            rm(file)
           })
 
 
@@ -302,11 +300,11 @@ Sheditor <- R6::R6Class(
           observeEvent(input$btnLoad, {
             lg$trace("Trigger Load Button")
 
-            if (file.exists(input$fname)){
+            if (file.exists(input$file)){
               tryCatch(
                 {
-                  lg$info("Loading data from file system: %s", input$fname)
-                  output <- self$format$read(input$fname, locale = .locale)
+                  lg$info("Loading data from file system: %s", input$file)
+                  output <- self$format$read(input$file, locale = .locale)
                   output <- prep_input_df(output)
 
                   values[["output"]] <- output
@@ -316,28 +314,16 @@ Sheditor <- R6::R6Class(
                   rm(output)
                 },
                 error = function(e) {
-                  lg$error("Input file exists but cannot be read %s", input$fname)
+                  lg$error("Input file exists but cannot be read %s", input$file)
                   lg$error("Reason: %s", e)
                 }
               )
 
             } else {
-              lg$error("Input file does not exist: %s", input$fname)
+              lg$error("Input file does not exist: %s", input$file)
             }
 
             assert_only_char_cols(values[["output"]])
-          })
-
-
-          # session end -------------------------------------------------------------
-          session$onSessionEnded(function() {
-            lg$trace("Trigger Session End")
-            stopApp({
-              sheditor_retval(
-                parse_output_df(isolate(values[["output"]])),
-                isolate(input$fname)
-              )
-            })
           })
         }
       )

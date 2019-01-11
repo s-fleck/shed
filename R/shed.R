@@ -48,6 +48,7 @@ shed <- function(
   )
 
   editor$edit()
+  invisible(editor$data)
 }
 
 
@@ -69,7 +70,8 @@ shed2 <- function(
     theme = theme
   )
 
-  invisible(editor$edit())
+  editor$edit()
+  invisible(editor$data)
 }
 
 
@@ -91,9 +93,9 @@ shedx <- function(
     theme = theme
   )
 
-  invisible(editor$edit())
+  editor$edit()
+  invisible(editor$data)
 }
-
 
 
 
@@ -114,11 +116,9 @@ shed2x <- function(
     theme = theme
   )
 
-  invisible(editor$edit())
+  editor$edit()
+  invisible(editor$data)
 }
-
-
-
 
 
 
@@ -196,6 +196,7 @@ parse_output_df <- function(x){
 
 
 
+
 empty_df <- function(
   rows = 1,
   cols = 1
@@ -207,6 +208,7 @@ empty_df <- function(
   names(res) <- paste0("X", seq_len(cols))
   res
 }
+
 
 
 
@@ -230,6 +232,7 @@ hot_to_r_safely <- function(...){
     res
   }
 }
+
 
 
 

@@ -31,6 +31,5 @@ Collate:
     'utils-sfmisc.R'
     'shed_formats.R'
     'sheditor.R'
-    'sheditor_retval.R'
     'utils-rd.R'
     'utils.R'
