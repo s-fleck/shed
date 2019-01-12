@@ -16,6 +16,7 @@ r6_usage <- function(
 
 
 
+
 collect_usage <- function(
   x,
   name = "x"
@@ -60,6 +61,8 @@ collect_usage <- function(
 }
 
 
+
+
 make_function_usage <- function(name, arglist){
   paste0(name, "(", fmt_formals(arglist), ")")
 }
@@ -83,4 +86,3 @@ fmt_formals <- function(fmls){
   sep <- ifelse(res == "", "", "\u{A0}=\u{A0}")
   paste0(names(res), sep, res, collapse = ", ")
 }
-

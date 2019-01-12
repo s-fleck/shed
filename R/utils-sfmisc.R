@@ -1,4 +1,4 @@
-# sfmisc utils 0.0.1.9020
+# sfmisc utils 0.0.1.9025
 
 
 
@@ -13,6 +13,7 @@
 #'
 #' @param x a vector
 #' @param width (maximum) width of result
+#' @param dots `character` scalar. String to use for ellipses
 #' @inheritParams paste
 #'
 #' @return a `character` scalar
@@ -26,7 +27,8 @@ ptrunc <- function(
   ...,
   width = 40L,
   sep = ", ",
-  collapse = ", "
+  collapse = ", ",
+  dots = " ..."
 ){
   assert(width > 7L, "The minimum supported width is 8")
   x <- paste(..., sep = sep, collapse = collapse)
@@ -34,7 +36,7 @@ ptrunc <- function(
   sel <- vapply(x, nchar, integer(1), USE.NAMES = FALSE) > width
 
   x[sel] <- strtrim(x[sel], width = width - 4L)
-  x[sel] <- paste(gsub(",{0,1}\\s*$", "", x[sel]), "...")
+  x[sel] <- paste0(gsub(",{0,1}\\s*$", "", x[sel]), dots)
   x
 }
 
@@ -230,6 +232,13 @@ is_scalar <- function(x){
 
 
 
+is_scalar_list <- function(x){
+  is_list(x) && is_scalar(x)
+}
+
+
+
+
 is_scalar_atomic <- function(x){
   is.atomic(x) && is_scalar(x)
 }
@@ -274,6 +283,13 @@ is_scalar_numeric <- function(x){
 
 is_scalar_character <- function(x){
   is.character(x) && is_scalar(x)
+}
+
+
+
+
+is_vector <- function(x){
+  is.atomic(x) || is.list(x)
 }
 
 
@@ -327,6 +343,13 @@ is_scalar_integerish <- function(x){
 
 
 
+is_n <- function(x){
+  is_scalar_integerish(x) && identical(x >= 0, TRUE)
+}
+
+
+
+
 #' Check if Objects have the same length
 #'
 #' @param ... Any number of \R Objects.
@@ -372,6 +395,26 @@ is_blank <- function(x){
 
 
 # all_are -----------------------------------------------------------------
+
+#' Convert vector if identical elements to scalar
+#'
+#' Returns `unique(x)` if all elements of `x` are identical, throws an error if
+#' not.
+#'
+#' @inheritParams all_are_identical
+#'
+#' @return A scalar of the same type as `x`
+#' @noRd
+as_scalar <- function(x){
+  res <- unique(x)
+  if (is_scalar(res)){
+    return(res)
+  } else {
+    stop("Not all elements of x are identical")
+  }
+}
+
+
 
 
 #' Test if all elements of a vector are identical
@@ -454,6 +497,72 @@ all_are_distinct <- function(
 
 n_distinct <- function(x){
   length(unique(x))
+}
+
+
+
+
+# misc --------------------------------------------------------------------
+
+
+pad_left <- function(
+  x,
+  width = max(nchar(paste(x))),
+  pad = " "
+){
+  diff <- pmax(width - nchar(paste(x)), 0L)
+  padding <-
+    vapply(diff, function(i) paste(rep.int(pad, i), collapse = ""), character(1))
+  paste0(padding, x)
+}
+
+
+
+
+pad_right <- function(
+  x,
+  width = max(nchar(paste(x))),
+  pad = " "
+){
+  diff <- pmax(width - nchar(paste(x)), 0L)
+  padding <-
+    vapply(diff, function(i) paste(rep.int(pad, i), collapse = ""), character(1))
+  paste0(x, padding)
+}
+
+
+
+
+`%||%` <- function(x, y){
+  if (is.null(x))
+    y
+  else (x)
+}
+
+
+
+
+preview_object <- function(
+  x,
+  width = 32,
+  brackets = c("(", ")"),
+  quotes   = c("`", "`"),
+  dots = ".."
+){
+  if (!is.atomic(x))
+    return(class_fmt(x))
+
+  if (is.numeric(x))
+    x <- format(x, justify = "none", drop0trailing = TRUE, trim = TRUE)
+
+  res <- ptrunc(x, collapse = ", ", width = width, dots = dots)
+
+  if (length(x) > 1)
+    res <- paste0(brackets[[1]], res, brackets[[2]])
+  else
+    res <- paste0(quotes[[1]], res, quotes[[2]])
+
+  res
 }
 
 

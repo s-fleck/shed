@@ -153,7 +153,7 @@ Sheditor <- R6::R6Class(
           })
 
 
-          # infile ui -----------------------------------------------------------
+          # infile ui -----------------------------------------------------
           observe({
             lg$trace("File path was modified", event = "InputFilePathModified")
 
@@ -171,7 +171,7 @@ Sheditor <- R6::R6Class(
           })
 
 
-          # render hot ---------------------------------------------------------
+          # render hot ----------------------------------------------------
           output$hot <- renderRHandsontable({
             if (is.data.frame(values[["output"]])){
               lg$trace("Rendering HOT", event = "renderHOT")
@@ -190,7 +190,7 @@ Sheditor <- R6::R6Class(
 
           # +- edit hot ----------------------------------------------------------
           observeEvent(input$hot, {
-            lg$trace("HOT as modified by user", trigger = "userModifiedHot")
+            lg$trace("HOT as modified by user", event = "userModifiedHot")
 
             if (!is.null(input$hot)) {
               values[["output"]]   <- prep_input_df(hot_to_r_safely(input$hot))
@@ -221,7 +221,7 @@ Sheditor <- R6::R6Class(
 
           # +- save --------------------------------------------------------------
           save_file <- function(){
-            lg$trace("Saving file", trigger = "saveFile")
+            lg$trace("Saving file", event = "saveFile")
             assert_only_char_cols(values[["output"]])
 
             if (file.exists(input$file) && isTRUE(values[["overwrite"]]))
@@ -252,7 +252,7 @@ Sheditor <- R6::R6Class(
 
 
           observeEvent(input$btnSave, {
-            lg$trace("Activated trigger", event = "btnSave")
+            lg$trace("User triggered btnSave", event = "btnSave")
 
             if (!file.exists(input$file) || isTRUE(values[["overwrite"]])){
               save_file()
@@ -280,15 +280,15 @@ Sheditor <- R6::R6Class(
 
 
           observeEvent(input$modalOverwriteNo, {
-            lg$trace("Overwrite stays `FALSE`", trigger = "modalOverwriteNo")
+            lg$trace("Overwrite stays `FALSE`", event = "modalOverwriteNo")
             lg$info("File not saved")
             removeModal()
           })
 
 
-          # +- load --------------------------------------------------------------------
+          # +- load -------------------------------------------------------
           observeEvent(input$btnLoad, {
-            lg$trace("User triggered btnLoad", trigger = "btnLoad")
+            lg$trace("User triggered btnLoad", event = "btnLoad")
 
             if (file.exists(input$file)){
               tryCatch(
@@ -320,7 +320,7 @@ Sheditor <- R6::R6Class(
           })
 
 
-          # session end -------------------------------------------------------------
+          # session end ---------------------------------------------------
           session$onSessionEnded(function() {
             lg$trace("App shutdown", event = "SessionEnded" )
           })
@@ -383,7 +383,7 @@ handle_input <- function(
     if (length(input) == 2)  return(empty_df(input[[1]], input[[2]]))
 
     lg$error(
-      "If input is an integer it must be of length `1` (cols) or `2` (rows, cols)",
+      "If `input` is an integer it must be of length 1 (cols) or 2 (rows, cols)",
       input = input
     )
   }
@@ -406,7 +406,7 @@ prep_input_df <- function(
 
     ok <- tryCatch(
       assert_cell_limit(nrow(x), ncol(x)),
-      error = function(e) {lg$fatal(e); FALSE}
+      error = function(e) { lg$fatal(e); FALSE }
     )
     if (!ok) return(recover())
 
@@ -421,7 +421,7 @@ prep_input_df <- function(
     }
 
   # return
-  attr(x, "spec") <- NULL
+  attr(x, "spec") <- NULL  # clean up readr 'spec'
   x
 }
 

@@ -30,7 +30,10 @@ load_theme <- function(
 
   } else {
     lg$warn("Cannot parse theme. Falling back to default")
-    read_css_theme(getOption("shed.css", system.file("css", "shed_dark.css", package = "shed")))
+    read_css_theme(getOption(
+      "shed.css",
+      system.file("css", "shed_dark.css", package = "shed")
+    ))
   }
 }
 
@@ -46,6 +49,7 @@ read_css_theme <- function(
     sprintf("#hot tr td { font-size: %spx;  }", font_size)
   )
 }
+
 
 
 

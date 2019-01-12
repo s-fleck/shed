@@ -211,7 +211,10 @@ empty_df <- function(
   cols = 1
 ){
   assert_cell_limit(rows, cols)
-  lg$trace("Generating empty data.frame", dimensions = c(rows = rows, cols = cols))
+  lg$trace(
+    "Generating empty data.frame",
+    dimensions = c(rows = rows, cols = cols)
+  )
   res <- as.list(rep("", cols))
   res[[1]] <- rep("", rows)
   res <- as.data.frame(res, stringsAsFactors = FALSE)
@@ -227,8 +230,10 @@ hot_to_r_safely <- function(...){
   res <- tryCatch(
     hot_to_r(...),
     error = function(e) {
-      lg$error(e)
-      lg$debug("Cannot convert Handsontable, returning empty 0x0 data.frame instead.")
+      lg$error(paste(
+        "Handsontable could not be converted to dataframe. ",
+        "Returning a 0x0 data.frame instead.", "Reason: ", e
+      ))
       empty_df(0, 0)
     }
   )
@@ -236,7 +241,7 @@ hot_to_r_safely <- function(...){
   stopifnot(is.data.frame(res))
 
   if (identical(nrow(res), 0L) || identical(ncol(res), 0L)){
-    lg$debug("Cannot handle zero-row data.frame, returning empty 0x0 data.frame instead.")
+    lg$debug("Handsontable is a 0x0 data.frame")
     empty_df(0, 0)
   } else {
     res

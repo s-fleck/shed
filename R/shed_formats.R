@@ -22,12 +22,15 @@ ShedFormat <-  R6::R6Class(
 
 
 
+
 is_ShedFormat <- function(x){
   inherits(x, "ShedFormat")
 }
 
-# rw funs -----------------------------------------------------------------
 
+
+
+# rw funs -----------------------------------------------------------------
 
 shed_read_csv   <- function(
   path,
@@ -141,6 +144,7 @@ is_read_fun <- function(x){
 
 
 
+
 is_write_fun <- function(x){
   is.function(x) &&
     identical(names(formals(x)), c("x", "path"))
@@ -148,14 +152,8 @@ is_write_fun <- function(x){
 
 
 
+
 # formats -----------------------------------------------------------------
-
-
-
-
-
-
-
 
 shed_format_csv   <- ShedFormat$new(shed_read_csv, shed_write_csv)
 shed_format_csv2  <- ShedFormat$new(shed_read_csv2, shed_write_csv2)
