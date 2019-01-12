@@ -23,7 +23,7 @@ ShedFormat <-  R6::R6Class(
 
 
 is_ShedFormat <- function(x){
-  is(x, "ShedFormat")
+  inherits(x, "ShedFormat")
 }
 
 # rw funs -----------------------------------------------------------------
@@ -45,7 +45,6 @@ shed_read_csv   <- function(
 
   mostattributes(res) <- NULL
   has_colnames_row(res) <- TRUE
-  lg$trace("Loaded data.frame: \n%s", to_string(head(res)))
   res
 }
 
@@ -69,7 +68,6 @@ shed_read_csv2  <- function(
 
   mostattributes(res) <- NULL
   has_colnames_row(res) <- TRUE
-  lg$trace("Loaded data.frame: \n%s", to_string(head(res)))
   res
 }
 
@@ -93,7 +91,6 @@ shed_read_tsv  <- function(
 
   mostattributes(res) <- NULL
   has_colnames_row(res) <- TRUE
-  lg$trace("Loaded data.frame: \n%s", to_string(head(res)))
   res
 }
 

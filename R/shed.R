@@ -1,13 +1,29 @@
 #' Edit csv Files With Shiny
 #'
-#' @param fname either:
+#' `shed()` is the root function, `shed2()`, `shedx()`, `shed2x()` are just
+#' calls to shed with different preset `formats`
+#'
+#' @param file path to a file. If `input` is a file path, it defaults to that path,
+#'   else to a temporary file.
+#' @param input either:
 #'   * A scalar `character`: Path to the input file
 #'   * A `data.frame`
 #'   * An `integer` scalar: number of columns of desired empty table
 #'   * An `integer` vector of length 2: desired `rows, columns` of target table
-#' @param outfile Output file path
-#' @param opts Options to configure behaviour and appearence of the shed
-#'   app (see below)
+#' @param format a [ShedFormat()]. Shed formats are just wrapper around
+#'   functions to read and write tabular data to files. The default formats
+#'   are based on [the following functions from readr][readr::read_delim()]:
+#'
+#'   for `","` sepparated csv files:
+#'   - `shed()`:   `read_csv()` & `write_csv()` (`","` sepparated csv files)
+#'   - `shedx()`:  `read_csv()` & `write_excel_csv()`
+#'
+#'   for `";"` sepparated csv files:
+#'   - `shed2()`:  `read_csv2()` & `write_csv2()`
+#'   -  `shed2x()`: `read_csv2()` & `write_excel_csv2()`
+#'
+#' @param locale a [readr::locale]
+#' @inheritParams load_theme
 #'
 #'
 #' @section Options:
@@ -146,13 +162,6 @@ guess_encoding2 <- function(path, default = "UTF-8"){
   }
 
   res
-}
-
-
-
-
-to_string <- function(x){
-  paste(capture.output(print(x)), collapse = "\n")
 }
 
 

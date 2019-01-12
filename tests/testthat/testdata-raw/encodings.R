@@ -19,7 +19,6 @@ write.csv(
 )
 
 
-library(futile.logger)
 
 lg$threshold(TRACE)
 

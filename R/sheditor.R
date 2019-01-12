@@ -5,30 +5,25 @@
 #'
 #' @eval r6_usage(Sheditor)
 #'
-#' @section Creating a new Sheditor:
-#'
-
 #' @section Fields:
 #'
 #' \describe{
-#'   \item{`file`}{}
+#'   \item{`file`}{The file to read/write}
 #'
-#'   \item{`data`}{}
+#'   \item{`data`}{a `data.frame`: the parsed contents of `file`}
 #'
-#'   \item{`format`}{}
+#'   \item{`format`}{A [ShedFormat]}
 #'
-#'   \item{`theme`}{}
+#'   \item{`theme`}{see [load_theme()]}
 #'
-#'   \item{`locale`}{}
+#'   \item{`locale`}{A [readr::locale()]}
 #' }
 #'
 #' @section Methods:
 #'
 #' \describe{
-#'   \item{`edit`}{}
+#'   \item{`edit`}{Open a shiny app for editing `file`}
 #' }
-#'
-#' @section Active Bindings:
 #'
 #'
 #' @name Sheditor
@@ -404,35 +399,30 @@ prep_input_df <- function(
   recover = function() stop("Preparing data.frame failed")
 ){
   # preconditions
-    ok <- TRUE
-
     if (!is.data.frame(x)){
-      lg$fatal("input must be a data.frame")
-      ok <- FALSE
+      lg$error("input must be a data.frame")
+      return(recover())
     }
 
     ok <- tryCatch(
       assert_cell_limit(nrow(x), ncol(x)),
       error = function(e) {lg$fatal(e); FALSE}
     )
-
     if (!ok) return(recover())
 
   # init
-    res <- data.table::copy(x)
-
     if (!has_only_char_cols(x)){
       lg$debug(paste(
         "Autoconverting all columns to character. 'shed' can only handle",
         "data.frames with all-character columns properly. Please ensure that",
         "the `read()` in your `ShedFormat` returns such data.frames."
       ))
-      res[] <- lapply(res, as.character)
+      x[] <- lapply(x, as.character)
     }
 
   # return
-  attr(res, "spec") <- NULL
-  res
+  attr(x, "spec") <- NULL
+  x
 }
 
 
