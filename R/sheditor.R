@@ -143,7 +143,7 @@ Sheditor <- R6::R6Class(
 
           # startup -----------------------------------------------------------
           observeEvent(TRUE, once = TRUE, {
-            lg$trace("Trigger action", trigger = "startApp")
+            lg$trace("App startup", event = "SessionStarted")
 
             values[["overwrite"]] <- FALSE
             values[["modified"]]  <- FALSE
@@ -160,17 +160,17 @@ Sheditor <- R6::R6Class(
 
           # infile ui -----------------------------------------------------------
           observe({
-            lg$trace("Activated trigger", trigger = "InputFileColorChange")
+            lg$trace("File path was modified", event = "InputFilePathModified")
 
-            if(!file.exists(input$file)){
+            if (!file.exists(input$file)){
               values[["modified"]] <- TRUE
             }
 
             if (isTRUE(values[["modified"]])){
-              lg$trace("Input file color changed to 'NotSaved'")
+              lg$trace("Input file status changed",  status = "NotSaved")
               shinyjs::runjs('document.getElementById("fileDiv").className  = "fileNotSaved";')
             } else {
-              lg$trace("Input file color changed to 'Saved'")
+              lg$trace("Input file status changed",  status = "Saved")
               shinyjs::runjs('document.getElementById("fileDiv").className  = "fileSaved";')
             }
           })
@@ -179,7 +179,7 @@ Sheditor <- R6::R6Class(
           # render hot ---------------------------------------------------------
           output$hot <- renderRHandsontable({
             if (is.data.frame(values[["output"]])){
-              lg$trace("Activated trigger", trigger = "renderHOT")
+              lg$trace("Rendering HOT", event = "renderHOT")
               rhandsontable_shed(values[["output"]])
             } else {
               lg$trace(
@@ -195,7 +195,7 @@ Sheditor <- R6::R6Class(
 
           # +- edit hot ----------------------------------------------------------
           observeEvent(input$hot, {
-            lg$trace("Activated trigger", trigger = "userModifiedHot")
+            lg$trace("HOT as modified by user", trigger = "userModifiedHot")
 
             if (!is.null(input$hot)) {
               values[["output"]]   <- prep_input_df(hot_to_r_safely(input$hot))
@@ -204,7 +204,7 @@ Sheditor <- R6::R6Class(
                 identical(nrow(values[["output"]]), 0L) ||
                 identical(ncol(values[["output"]]), 0L)
               ){
-                lg$trace(
+                lg$debug(
                   paste("data.frame has illegal dimensions: %sx%s; returning",
                     "empty 1x1 data.frame instead."),
                   nrow(values[["output"]]),
@@ -226,8 +226,11 @@ Sheditor <- R6::R6Class(
 
           # +- save --------------------------------------------------------------
           save_file <- function(){
-            lg$trace("Activated trigger", trigger = "saveFile")
+            lg$trace("Saving file", trigger = "saveFile")
             assert_only_char_cols(values[["output"]])
+
+            if (file.exists(input$file) && isTRUE(values[["overwrite"]]))
+              lg$debug("Overwriting existing file", overwrite = TRUE, input$file)
 
             write_ok <- tryCatch(
               expr = {
@@ -254,22 +257,13 @@ Sheditor <- R6::R6Class(
 
 
           observeEvent(input$btnSave, {
-            lg$trace("Activated trigger", trigger = "btnSave")
-            file  <- input$file
-            overwrite <- values[["overwrite"]]
+            lg$trace("Activated trigger", event = "btnSave")
 
-            lg$trace("Target file %s", file)
-            lg$trace("Overwrite is set to %s", overwrite)
-
-            if (!file.exists(file)){
-              save_file()
-
-            } else if (isTRUE(overwrite)){
-              lg$debug("Overwriting existing file")
+            if (!file.exists(input$file) || isTRUE(values[["overwrite"]])){
               save_file()
 
             } else {
-              lg$trace("Activated trigger", trigger = "overwriteModal")
+              lg$trace("Showing overwrite modal", event = "modalOverwriteShow")
               showModal(shiny::modalDialog(
                 size = "s",
                 div("Overwrite existing file?", style = "height: 40px; " ),
@@ -278,15 +272,12 @@ Sheditor <- R6::R6Class(
                 footer = NULL
               ))
             }
-
-            rm(overwrite)
-            rm(file)
           })
 
 
           # overwrite modal
           observeEvent(input$modalOverwriteYes, {
-            lg$trace("Activated trigger", trigger = "modalOverwriteYes")
+            lg$trace("User set overwrite to `TRUE`", event = "modalOverwriteYes")
             values[["overwrite"]] <- TRUE
             save_file()
             removeModal()
@@ -294,7 +285,7 @@ Sheditor <- R6::R6Class(
 
 
           observeEvent(input$modalOverwriteNo, {
-            lg$trace("Activated trigger", trigger = "modalOverwriteNo")
+            lg$trace("Overwrite stays `FALSE`", trigger = "modalOverwriteNo")
             lg$info("File not saved")
             removeModal()
           })
@@ -302,7 +293,7 @@ Sheditor <- R6::R6Class(
 
           # +- load --------------------------------------------------------------------
           observeEvent(input$btnLoad, {
-            lg$trace("Activated trigger", trigger = "btnLoad")
+            lg$trace("User triggered btnLoad", trigger = "btnLoad")
 
             if (file.exists(input$file)){
               tryCatch(
@@ -332,6 +323,13 @@ Sheditor <- R6::R6Class(
 
             assert_only_char_cols(values[["output"]])
           })
+
+
+          # session end -------------------------------------------------------------
+          session$onSessionEnded(function() {
+            lg$trace("App shutdown", event = "SessionEnded" )
+          })
+
         }
       )
     }
@@ -413,26 +411,15 @@ prep_input_df <- function(
       ok <- FALSE
     }
 
-    if (nrow(x) > 10000){
-      lg$fatal(
-        "Dataset to large: Only up to 10000 rows are supported",
-        rows = nrow(x) - 1
-      )
-      ok <- FALSE
-    }
+    ok <- tryCatch(
+      assert_cell_limit(nrow(x), ncol(x)),
+      error = function(e) {lg$fatal(e); FALSE}
+    )
 
     if (!ok) return(recover())
 
   # init
     res <- data.table::copy(x)
-
-    if (nrow(x) > 1000){
-      lg$warn(paste(
-        "Large dataset: shed is designed for datasets with less than 1000",
-        "rows. Viewing and editing the table might be slow.",
-        rows = nrow(x) - 1
-      ))
-    }
 
     if (!has_only_char_cols(x)){
       lg$debug(paste(

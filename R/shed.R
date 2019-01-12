@@ -201,7 +201,8 @@ empty_df <- function(
   rows = 1,
   cols = 1
 ){
-  lg$trace("Generating empty %sx%s data.frame", rows, cols)
+  assert_cell_limit(rows, cols)
+  lg$trace("Generating empty data.frame", dimensions = c(rows = rows, cols = cols))
   res <- as.list(rep("", cols))
   res[[1]] <- rep("", rows)
   res <- as.data.frame(res, stringsAsFactors = FALSE)
@@ -244,4 +245,41 @@ rhandsontable_shed <- function(data, opts){
     colHeaders = NULL,
     rowHeights = getOption("shed.font_size", 14L) + 20
   )
+}
+
+
+
+
+assert_cell_limit <- function(
+  rows,
+  cols
+){
+  rows <- max(rows, 1)
+  cols <- max(cols, 1)
+
+  if (
+    rows >= getOption("shed.row_limit") ||
+    cols >= getOption("shed.col_limit")
+  ){
+    stop(lg$fatal(
+      "Input dataset to big",
+      dimensions = c(rows = rows, cols = cols),
+      shed.row_limit = getOption("shed.row_limit"),
+      shed.col_limit = getOption("shed.col_limit")
+    ))
+  } else if (
+    rows >= getOption("shed.row_warn") ||
+    cols >= getOption("shed.col_warn")
+  ){
+    lg$warn(
+      "Input dataset is big and editing the table might be slow",
+      dimensions = c(rows = rows, cols = cols),
+      shed.row_limit = getOption("shed.row_limit"),
+      shed.col_limit = getOption("shed.col_limit"),
+      shed.row_warn = getOption("shed.row_warn"),
+      shed.col_warn = getOption("shed.col_warn")
+    )
+  }
+
+  TRUE
 }
