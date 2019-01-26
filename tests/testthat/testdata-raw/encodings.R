@@ -19,9 +19,8 @@ write.csv(
 )
 
 
-library(futile.logger)
 
-flog.threshold(TRACE)
+lg$threshold(TRACE)
 
 shed(file.path(outdir, "tdf_utf8.csv"))
 shed(file.path(outdir, "tdf_latin1.csv"))

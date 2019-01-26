@@ -1,13 +1,29 @@
 #' Edit csv Files With Shiny
 #'
-#' @param fname either:
+#' `shed()` is the root function, `shed2()`, `shedx()`, `shed2x()` are just
+#' calls to shed with different preset `formats`
+#'
+#' @param file path to a file. If `input` is a file path, it defaults to that path,
+#'   else to a temporary file.
+#' @param input either:
 #'   * A scalar `character`: Path to the input file
 #'   * A `data.frame`
 #'   * An `integer` scalar: number of columns of desired empty table
 #'   * An `integer` vector of length 2: desired `rows, columns` of target table
-#' @param outfile Output file path
-#' @param opts Options to configure behaviour and appearence of the shed
-#'   app (see below)
+#' @param format a [ShedFormat()]. Shed formats are just wrapper around
+#'   functions to read and write tabular data to files. The default formats
+#'   are based on [the following functions from readr][readr::read_delim()]:
+#'
+#'   for `","` sepparated csv files:
+#'   - `shed()`:   `read_csv()` & `write_csv()` (`","` sepparated csv files)
+#'   - `shedx()`:  `read_csv()` & `write_excel_csv()`
+#'
+#'   for `";"` sepparated csv files:
+#'   - `shed2()`:  `read_csv2()` & `write_csv2()`
+#'   -  `shed2x()`: `read_csv2()` & `write_excel_csv2()`
+#'
+#' @param locale a [readr::locale]
+#' @inheritParams load_theme
 #'
 #'
 #' @section Options:
@@ -23,326 +39,32 @@
 #' @export
 #'
 #' @examples
-#'
-#' \dontrun{
+#' \donttest{
 #' shed(iris)
+#' }
+#' \dontrun{
 #' shed(4)  # Empty table with 4 columns
 #' shed(c(2, 4))  # Empty table with 2 rows and 4 columns
 #' }
 #'
 #'
 shed <- function(
-  file = NULL,
-  informat = "csv",
-  outformat = "csv",
-  opts = shed_opts()
+  input,
+  file   = if (is_scalar_character(input)) input else tempfile(),
+  format = shed_format_csv,
+  locale = readr::locale(),
+  theme = "default"
 ){
-  # preconditions
-  stopifnot(
-    is_scalar_integerish(opts$font_size),
-    is_css_file(opts$css),
-
-    is.null(file) ||
-    (is_scalar_character(file)) ||
-    (is.data.frame(file)) ||
-    (is_integerish(file) && length(file) %in% 1:2)
+  editor <- Sheditor$new(
+    input = input,
+    file = file,
+    format = format,
+    locale = locale,
+    theme = theme
   )
 
-  # init
-
-  if (is.null(file)) file <- 1L
-
-  if (is_integerish(file)){
-
-    stopifnot(all(file > 0))
-
-    if (identical(length(file), 1L)){
-      file <- c(1, file)
-    }
-
-    file <- empty_df(file[[1]], file[[2]])
-  }
-
-
-  theme <- paste(
-    paste(readLines(opts$css), collapse = "\n"),
-    sprintf("#hot tr td { font-size: %spx;  }", opts$font_size)
-  )
-
-  fname <- make_outfile_name(file)
-
-  if (is_scalar_character(file) && !file.exists(file)){
-    file <- empty_df(1, 1)
-  }
-
-
-  shed_app <- shiny::shinyApp(
-    ui = fluidPage(
-      width = "100%",
-      shinyjs::useShinyjs(),
-      tags$head(
-        tags$style(HTML(theme)),
-        tags$script(HTML(
-          js_add_ctrl_hotkey("$('#btnSave').click()", key = c(83))
-        ))
-      ),
-
-      fixedPanel(
-        id = "panelTop",
-        top = 0,
-        left = 0,
-        right = 0,
-
-        div(
-          class = "shedFnameContainer",
-          div(textInput("fname", NULL, fname, width = "100%"), class = "fnameSaved", id = "fnameDiv")
-        ),
-        div(
-          class = "shedCtrl",
-          actionButton("btnLoad", "load", class = "shedButton shedCtrlElement"),
-
-          div(
-              class = "shedDropdownContainer",
-              selectInput("readFun", NULL, names(opts$read_funs), selected = informat)
-            ),
-          div(
-            class = "shedDropdownContainer",
-            selectInput("readEncoding", NULL, opts$read_encoding)
-          ),
-          div(class = "shedCtrlSpacing"),
-          actionButton("btnSave", "save", class = "shedButton shedCtrlElement"),
-          div(
-            class = "shedDropdownContainer",
-            selectInput("writeFun", NULL, names(opts$write_funs), selected = outformat)
-          )
-        )
-      ),
-
-      absolutePanel(
-        rHandsontableOutput("hot"),
-        top = 160,
-        left = 0,
-        right = 0
-      )
-    ),
-
-
-    server = function(input, output, session) {
-
-    # reactives -----------------------------------------------------------
-      values <- reactiveValues()
-      values[["overwrite"]] <- FALSE
-      read_fun  <- reactive({ opts$read_funs[[input$readFun]] })   #nolint
-      write_fun <- reactive({ opts$write_funs[[input$writeFun]] })   #nolint
-
-
-    # local funs ----------------------------------------------------------
-      save_file <- function(){
-        flog.trace("Trigger save file")
-        .output   <- values[["output"]]
-        .fname    <- input$fname
-        stopifnot( all(vapply(.output, is.character, logical(1))) )
-
-        write_fun <- opts$write_funs[[input$writeFun]]
-        is_saved <- try(write_fun(.output, path = .fname))
-        is_saved <- !inherits(is_saved, "try-error") && file.exists(.fname)
-
-        if (is_saved){
-          values[["output_saved"]] <- .output
-          values[["modified"]] <- FALSE
-          flog.info("Saved to %s", .fname)
-
-        } else {
-          flog.error("Could not save file to '%s'", .fname)
-        }
-      }
-
-
-    # infile ui -----------------------------------------------------------
-      observe({
-        flog.trace("Trigger input file color change")
-
-        if(!file.exists(input$fname)){
-          values[["modified"]] <- TRUE
-        }
-
-        if (isTRUE(values[["modified"]])){
-          flog.trace("Input file color changed to NotSaved")
-          shinyjs::runjs('document.getElementById("fnameDiv").className  = "fnameNotSaved";')
-        } else {
-          flog.trace("Input file color changed to Saved")
-          shinyjs::runjs('document.getElementById("fnameDiv").className  = "fnameSaved";')
-        }
-      })
-
-
-    # render hot
-      output$hot <- renderRHandsontable({
-        if (is.data.frame(values[["output"]])){
-          flog.trace("Trigger HOT render")
-          rhandsontable_shed(values[["output"]], opts = opts)
-        } else {
-          flog.trace("'output' is not a data.frame")
-          NULL
-        }
-      })
-
-
-    # i/o -----------------------------------------------------------------
-
-    # . startup -----------------------------------------------------------
-      observeEvent(TRUE, once = TRUE, {
-        flog.debug("Trigger App Startup")
-
-        updateTextInput(session, inputId = "fname", value = fname)
-
-        if (is.data.frame(file)) {
-          flog.trace("Loading data from input data.frame")
-          .output <- as.data.frame(rbind(
-            colnames(file),
-            as.matrix(file)
-          ),
-            stringsAsFactors = FALSE
-          )
-
-          if (!all(vapply(.output, is.character, logical(1)))) {
-            flog.warn("All columns should be read as character")
-          }
-
-          values[["modified"]] <- TRUE
-
-        } else {
-          read    <- read_fun()
-          .output <- read(fname, encoding = input[["readEncoding"]])
-          values[["modified"]] <- FALSE
-        }
-
-        validate_input_df(.output)
-
-        values[["output"]] <- .output
-        rm(.output)
-      })
-
-
-    # . edit hot ----------------------------------------------------------
-      observeEvent(input$hot, {
-        flog.trace("Trigger user input HOT update")
-
-        if (!is.null(input$hot)) {
-
-          values[["output"]]   <- hot_to_r_safely(input$hot)
-
-          if (
-            identical(nrow(values[["output"]]), 0L) ||
-            identical(ncol(values[["output"]]), 0L)
-          ){
-            flog.trace("Trigger HOT render")
-            flog.trace(
-              "data.frame has illegal dimensions: %sx%s; returning empty 1x1 data.frame instead.",
-              nrow(values[["output"]]),
-              ncol(values[["output"]])
-            )
-            values[["output"]] <- empty_df(1, 1)
-            output$hot <- renderRHandsontable(
-              rhandsontable_shed(values[["output"]], opts = opts)
-            )
-          }
-
-          values[["modified"]] <- !isTRUE(all.equal(
-            try(unname(as.matrix(values[["output_saved"]])), silent = TRUE),
-            unname(as.matrix(values[["output"]]))
-          ))
-        }
-      })
-
-
-    # . save --------------------------------------------------------------
-      observeEvent(input$btnSave, {
-        flog.trace("Trigger Save Button")
-        .fname  <- input$fname
-        .overwrite <- values[["overwrite"]]
-
-        flog.trace("Target file %s", .fname)
-        flog.trace("Overwrite is set to %s", .overwrite)
-
-        if (!file.exists(.fname) || isTRUE(.overwrite)){
-          save_file()
-
-        } else {
-          flog.trace("Trigger Overwrite Modal")
-          showModal(shiny::modalDialog(
-            size = "s",
-            div("Overwrite existing file?", style = "height: 40px; " ),
-            shiny::actionButton("modalOverwriteYes", "Yes", class = "modal-button"),
-            shiny::actionButton("modalOverwriteNo", "No", class = "modal-button"),
-            footer = NULL
-          ))
-        }
-
-        rm(.overwrite)
-        rm(.fname)
-      })
-
-      # overwrite modal
-      observeEvent(input$modalOverwriteYes, {
-        flog.trace("Trigger modalOverwriteYes")
-        values[["overwrite"]] <- TRUE
-        save_file()
-        removeModal()
-      })
-
-      observeEvent(input$modalOverwriteNo, {
-        flog.trace("Trigger modalOverwriteNo")
-        flog.info("Not saved")
-        removeModal()
-      })
-
-
-    # . load --------------------------------------------------------------------
-      observeEvent(input$btnLoad, {
-        flog.trace("Trigger Load Button")
-
-        read <- read_fun()
-
-        if (file.exists(input$fname)){
-          tryCatch({
-            flog.info("Loading data from file system: %s", input$fname)
-            .output <- read(input$fname, encoding = input[["readEncoding"]])
-
-            validate_input_df(.output)
-
-            values[["output"]] <- .output
-            values[["output_saved"]] <- .output
-            values[["modified"]] <- FALSE
-            values[["overwrite"]] <- FALSE
-            rm(.output)
-          },
-            error = function(e) {
-              flog.error("Input file exists but cannot be read %s", input$fname)
-              flog.error("Reason: %s", e)
-            }
-          )
-
-        } else {
-          flog.error("Input file does not exist: %s", input$fname)
-        }
-
-        if (!all(vapply(values[["output"]], is.character, logical(1)))) {
-          flog.warn("All columns should be read as character")
-        }
-      })
-
-
-
-    # session end -------------------------------------------------------------
-      session$onSessionEnded(function() {
-        flog.trace("Trigger Session End")
-        stopApp(parse_output_df(isolate(values[["output"]])))
-      })
-    }
-  )
-
-  invisible(runApp(shed_app))
+  editor$edit()
+  invisible(editor$data)
 }
 
 
@@ -351,13 +73,21 @@ shed <- function(
 #' @rdname shed
 #' @export
 shed2 <- function(
-  file = NULL
+  input,
+  file   = if (is_scalar_character(input)) input else tempfile(),
+  locale = readr::locale(),
+  theme = "default"
 ){
-  shed(
+  editor <- Sheditor$new(
+    input = input,
     file = file,
-    informat = "csv2",
-    outformat = "csv2"
+    format = shed_format_csv2,
+    locale = locale,
+    theme = theme
   )
+
+  editor$edit()
+  invisible(editor$data)
 }
 
 
@@ -366,13 +96,21 @@ shed2 <- function(
 #' @rdname shed
 #' @export
 shedx <- function(
-  file = NULL
+  input,
+  file   = if (is_scalar_character(input)) input else tempfile(),
+  locale = readr::locale(),
+  theme = "default"
 ){
-  shed(
+  editor <- Sheditor$new(
+    input = input,
     file = file,
-    informat = "csv2",
-    outformat = "excel_csv2"
+    format = shed_format_csvx,
+    locale = locale,
+    theme = theme
   )
+
+  editor$edit()
+  invisible(editor$data)
 }
 
 
@@ -380,133 +118,22 @@ shedx <- function(
 
 #' @rdname shed
 #' @export
-shedx2 <- function(
-  file = NULL
+shed2x <- function(
+  input,
+  file   = if (is_scalar_character(input)) input else tempfile(),
+  locale = readr::locale(),
+  theme = "default"
 ){
-  shed(
+  editor <- Sheditor$new(
+    input = input,
     file = file,
-    informat = "csv2",
-    outformat = "excel_csv2"
+    format = shed_format_csv2x,
+    locale = locale,
+    theme = theme
   )
-}
 
-
-
-
-
-# helpers -----------------------------------------------------------------
-
-shed_read_csv   <- function(path, encoding){
-  flog.debug("Reading file %s with encoding %s", path, encoding)
-
-  if (encoding == "guess"){
-    encoding <- guess_encoding2(path)
-  }
-
-  loc <- readr::locale(encoding = encoding)
-
-  res <- as.data.frame(
-    readr::read_csv(
-      path,
-      col_names = FALSE,
-      col_types = readr::cols(.default = "c")),
-      locale = loc
-    )
-
-  mostattributes(res) <- NULL
-  flog.trace("Loaded data.frame: \n%s", to_string(head(res)))
-  res
-}
-
-
-
-
-shed_read_csv2  <- function(path, encoding){
-
-  flog.debug("Reading file %s with encoding %s", path, encoding)
-
-  if (encoding == "guess"){
-    encoding <- guess_encoding2(path)
-  }
-
-  loc <- readr::locale(encoding = encoding)
-
-  res <- suppressMessages(as.data.frame(
-      readr::read_csv2(
-        path,
-        col_names = FALSE,
-        col_types = readr::cols(.default = "c"),
-      locale = loc
-    )
-  ))
-
-  mostattributes(res) <- NULL
-
-  flog.trace("Loaded data.frame: \n%s", to_string(head(res)))
-  res
-}
-
-
-
-
-shed_read_tsv  <- function(path, encoding){
-
-  flog.debug("Reading file %s with encoding %s", path, encoding)
-
-  if (encoding == "guess"){
-    encoding <- guess_encoding2(path)
-  }
-
-  loc <- readr::locale(encoding = encoding)
-
-  res <- suppressMessages(as.data.frame(
-      readr::read_tsv(
-        path,
-        col_names = FALSE,
-        col_types = readr::cols(.default = "c"),
-      locale = loc
-    )
-  ))
-
-  mostattributes(res) <- NULL
-
-  flog.trace("Loaded data.frame: \n%s", to_string(head(res)))
-  res
-}
-
-
-
-
-shed_write_csv  <- function(x, path){
-  readr::write_csv(x, path, col_names = FALSE, na = "")
-}
-
-
-
-
-shed_write_csv2 <- function(x, path){
-  readr::write_csv2(x, path, col_names = FALSE, na = "")
-}
-
-
-
-
-shed_write_excel_csv  <- function(x, path){
-  readr::write_excel_csv(x, path, col_names = FALSE, na = "")
-}
-
-
-
-
-shed_write_excel_csv2 <- function(x, path){
-  readr::write_excel_csv2(x, path, col_names = FALSE, na = "")
-}
-
-
-
-
-shed_write_tsv <- function(x, path) {
-  readr::write_tsv(x, path, col_names = FALSE, na = "")
+  editor$edit()
+  invisible(editor$data)
 }
 
 
@@ -528,20 +155,13 @@ guess_encoding2 <- function(path, default = "UTF-8"){
 
   if (nrow(dd) > 0){
     res <- dd[[1, 1]]
-    flog.debug("Guessed Encoding: %s", res)
+    lg$debug("Guessed Encoding: %s", res)
   } else {
     res <- default
-    flog.debug("Could not determine encoding. Falling back to %s", default)
+    lg$debug("Could not determine encoding. Falling back to %s", default)
   }
 
   res
-}
-
-
-
-
-to_string <- function(x){
-  paste(capture.output(print(x)), collapse = "\n")
 }
 
 
@@ -586,27 +206,15 @@ parse_output_df <- function(x){
 
 
 
-validate_input_df <- function(x){
-  if (nrow(x) > 1000){
-    flog.warn(
-      paste("Shed is designed for datasets with less than 1000 rows and",
-      "performs badly for larger ones. Input has %s rows."),
-      nrow(x) - 1
-    )
-  }
-
-  if (nrow(x) > 10000){
-    flog.fatal(paste(
-      "Loading data > 10000 rows is disabled as shed is unusably slow",
-      "for such large datasets. Input has %s rows."), nrow(x) - 1
-    ) %>% stop()
-  }
-}
-
-
-
-
-empty_df <- function(rows, cols){
+empty_df <- function(
+  rows = 1,
+  cols = 1
+){
+  assert_cell_limit(rows, cols)
+  lg$trace(
+    "Generating empty data.frame",
+    dimensions = c(rows = rows, cols = cols)
+  )
   res <- as.list(rep("", cols))
   res[[1]] <- rep("", rows)
   res <- as.data.frame(res, stringsAsFactors = FALSE)
@@ -616,13 +224,16 @@ empty_df <- function(rows, cols){
 
 
 
+
 hot_to_r_safely <- function(...){
 
   res <- tryCatch(
     hot_to_r(...),
     error = function(e) {
-      flog.error(e)
-      flog.debug("Cannot convert Handsontable, returning empty 0x0 data.frame instead.")
+      lg$error(paste(
+        "Handsontable could not be converted to dataframe. ",
+        "Returning a 0x0 data.frame instead.", "Reason: ", e
+      ))
       empty_df(0, 0)
     }
   )
@@ -630,12 +241,13 @@ hot_to_r_safely <- function(...){
   stopifnot(is.data.frame(res))
 
   if (identical(nrow(res), 0L) || identical(ncol(res), 0L)){
-    flog.debug("Cannot handle zero-row data.frame, returning empty 0x0 data.frame instead.")
+    lg$debug("Handsontable is a 0x0 data.frame")
     empty_df(0, 0)
   } else {
     res
   }
 }
+
 
 
 
@@ -645,7 +257,43 @@ rhandsontable_shed <- function(data, opts){
     readOnly = FALSE,
     useTypes = FALSE,
     colHeaders = NULL,
-    rowHeights = opts$font_size + 20
+    rowHeights = getOption("shed.font_size", 14L) + 20
   )
 }
 
+
+
+
+assert_cell_limit <- function(
+  rows,
+  cols
+){
+  rows <- max(rows, 1)
+  cols <- max(cols, 1)
+
+  if (
+    rows >= getOption("shed.row_limit") ||
+    cols >= getOption("shed.col_limit")
+  ){
+    stop(lg$fatal(
+      "Input dataset to big",
+      dimensions = c(rows = rows, cols = cols),
+      shed.row_limit = getOption("shed.row_limit"),
+      shed.col_limit = getOption("shed.col_limit")
+    ))
+  } else if (
+    rows >= getOption("shed.row_warn") ||
+    cols >= getOption("shed.col_warn")
+  ){
+    lg$warn(
+      "Input dataset is big and editing the table might be slow",
+      dimensions = c(rows = rows, cols = cols),
+      shed.row_limit = getOption("shed.row_limit"),
+      shed.col_limit = getOption("shed.col_limit"),
+      shed.row_warn = getOption("shed.row_warn"),
+      shed.col_warn = getOption("shed.col_warn")
+    )
+  }
+
+  TRUE
+}

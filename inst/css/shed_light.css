@@ -24,21 +24,21 @@ body {
   }
 
 
-  .shedFnameContainer {
+  .shedFileContainer {
     margin-top: 12px;
     margin-left: 6px;
     margin-right: 12px;
   }
 
-  .fnameSaved #fname{
+  .fileSaved #file{
     color: #006064!important;
   }
 
-  .fnameNotSaved #fname {
+  .fileNotSaved #file {
     color: #3E2723!important;
   }
 
-  #fname{
+  #file{
     background-color: #EFEBE9;
     border: #181712;
     width: 100%;
