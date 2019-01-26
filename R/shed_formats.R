@@ -36,7 +36,7 @@ shed_read_csv   <- function(
   path,
   locale
 ){
-  lg$debug("Reading file %s with encoding %s", path, locale$encoding)
+  lg$debug("Reading csv file", file = path, encoding = locale$encoding)
 
   res <- as.data.frame(
     readr::read_csv(
@@ -58,7 +58,7 @@ shed_read_csv2  <- function(
   path,
   locale
 ){
-  lg$debug("Reading file %s with encoding %s", path, locale$encoding)
+  lg$debug("Reading csv file", file = path, encoding = locale$encoding)
 
   res <- suppressMessages(as.data.frame(
     readr::read_csv2(
@@ -81,7 +81,7 @@ shed_read_tsv  <- function(
   path,
   locale
 ){
-  lg$debug("Reading tsv file %s with encoding %s", path, locale$encoding)
+  lg$debug("Reading tsv file", file = path, encoding = locale$encoding)
 
   res <- suppressMessages(as.data.frame(
     readr::read_tsv(
