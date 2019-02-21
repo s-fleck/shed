@@ -12,8 +12,7 @@
     shed.row_limit = 1e4,
     shed.row_warn  = 1e3,
     shed.col_limit = 2e3,
-    shed.col_warn  = 1e1,
-    shed.lgr_threshold = "info"
+    shed.col_warn  = 1e1
   )
 
   toset <- !(names(op.default) %in% names(op))
@@ -21,7 +20,7 @@
 
   assign(
     "lg",
-    lgr::Logger$new(name = "shed", threshold = getOption("shed.lgr_threshold")),
+    lgr::get_logger("shed"),
     envir = parent.env(environment())
   )
 
