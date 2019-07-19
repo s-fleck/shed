@@ -12,7 +12,7 @@
     shed.row_limit = 1e4,
     shed.row_warn  = 1e3,
     shed.col_limit = 2e3,
-    shed.col_warn  = 1e1
+    shed.col_warn  = 1e2
   )
 
   toset <- !(names(op.default) %in% names(op))

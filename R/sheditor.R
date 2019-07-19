@@ -174,7 +174,7 @@ Sheditor <- R6::R6Class(
           # render hot ----------------------------------------------------
           output$hot <- renderRHandsontable({
             if (is.data.frame(values[["output"]])){
-              lg$trace("Rendering HOT", event = "renderHOT")
+              lg$trace("Rendering HOT", event = "renderHOT", data = values[["output"]])
               rhandsontable_shed(values[["output"]])
             } else {
               lg$trace(
