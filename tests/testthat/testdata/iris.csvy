@@ -1,0 +1,12 @@
+#---
+#constraints:
+#  X_SPECIES_PK:
+#    type: "PRIMARY KEY"
+#    columns: Species
+#---
+col_name;col_type;sql_type;sql_opts;fwf_start;fwf_end
+Sepal.Length;numeric;double;NOT NULL;1;2
+Sepal.Width;numeric;double;;2;3
+Petal.Length;numeric;double;;3;4
+Petal.Width;numeric;double;;4;5
+Species;factor;varchar(255);;5;6
