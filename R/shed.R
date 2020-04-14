@@ -139,6 +139,29 @@ shed2x <- function(
 
 
 
+#' @rdname shed
+#' @export
+shed2y <- function(
+  input,
+  file   = if (is_scalar_character(input)) input else tempfile(),
+  locale = readr::locale(),
+  theme = "default"
+){
+  editor <- Sheditor$new(
+    input = input,
+    file = file,
+    format = shed_format_csvy2,
+    locale = locale,
+    theme = theme
+  )
+
+  editor$edit()
+  invisible(editor$data)
+}
+
+
+
+
 make_outfile_name <- function(x){
   ifelse(
     is.character(x) && (length(x) == 1),

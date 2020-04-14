@@ -37,31 +37,33 @@ NULL
 Sheditor <- R6::R6Class(
   "Sheditor",
   public = list(
-    initialize =
-      function(
-        input  = NULL,
-        file   = if (is_scalar_character(input)) input else tempfile(),
-        format = shed_format_csv,
-        locale = readr::locale(),
-        theme  = "default"
-      ){
-        self$data   <- handle_input(input, file, format, locale)
-        self$theme  <- load_theme(theme)
-        self$file  <- file
-        self$format <- format
-        self$locale <- locale
+    header = NULL,
 
-      },
-    edit =
-      function(
-        x = NULL
-      ){
-        if (!is.null(x))
-          self$file <- x
+    initialize = function(
+      input  = NULL,
+      file   = if (is_scalar_character(input)) input else tempfile(),
+      format = shed_format_csv,
+      locale = readr::locale(),
+      theme  = "default"
+    ){
+      self$data   <- handle_input(input, file, format, locale)
+      self$header <- attr(self$data, "header")
+      self$theme  <- load_theme(theme)
+      self$file  <- file
+      self$format <- format
+      self$locale <- locale
+    },
+
+    edit = function(
+      x = NULL
+    ){
+      if (!is.null(x))
+        self$file <- x
 
         res <- print(private$app(
           .data   = self$data,
-          .file  = self$file,
+          .header = self$header,
+          .file   = self$file,
           .format = self$format,
           .theme  = self$theme,
           .locale = self$locale
@@ -79,6 +81,7 @@ Sheditor <- R6::R6Class(
   private = list(
     app = function(
       .data,
+      .header,
       .file,
       .format,
       .locale,
@@ -111,7 +114,9 @@ Sheditor <- R6::R6Class(
               class = "shedCtrl",
               actionButton("btnLoad", "load", class = "shedButton shedCtrlElement"),
               div(class = "shedCtrlSpacing"),
-              actionButton("btnSave", "save", class = "shedButton shedCtrlElement")
+              actionButton("btnSave", "save", class = "shedButton shedCtrlElement"),
+              div(class = "shedCtrlSpacing"),
+              actionButton("btnMeta", "metadata", class = "shedButton shedCtrlElement")
             )
           ),
 
@@ -133,6 +138,7 @@ Sheditor <- R6::R6Class(
 
           # int -----------------------------------------------------------
           values    <- reactiveValues()
+
           if (!has_colnames_row(.data)) .data <- colnames_to_row(.data)
 
 
@@ -143,6 +149,7 @@ Sheditor <- R6::R6Class(
             values[["overwrite"]] <- FALSE
             values[["modified"]]  <- FALSE
             values[["output"]]    <- prep_input_df(.data)
+            values[["header"]]    <- .header
 
             stopifnot(
               is_ShedFormat(.format),
@@ -171,7 +178,18 @@ Sheditor <- R6::R6Class(
           })
 
 
-          # render hot ----------------------------------------------------
+          # btnMeta --------------------------------------------------------
+          observe({
+            if (isTRUE(grepl("\\.csvy$", input$file))){
+              lg$trace("showing btnMeta")
+              shinyjs::show("btnMeta")
+            } else {
+              lg$trace("hding btnMeta")
+              shinyjs::hide("btnMeta")
+            }
+          })
+
+
           output$hot <- renderRHandsontable({
             if (is.data.frame(values[["output"]])){
               lg$trace("Rendering HOT", event = "renderHOT", data = values[["output"]])
@@ -222,14 +240,18 @@ Sheditor <- R6::R6Class(
           # +- save --------------------------------------------------------------
           save_file <- function(){
             lg$trace("Saving file", event = "saveFile")
-            assert_only_char_cols(values[["output"]])
+
+            dd <- values[["output"]]
+            attr(dd, "header") <- values[["header"]]
+
+            assert_only_char_cols(dd)
 
             if (file.exists(input$file) && isTRUE(values[["overwrite"]]))
               lg$debug("Overwriting existing file", overwrite = TRUE, input$file)
 
             write_ok <- tryCatch(
               expr = {
-                self$format$write(values[["output"]], path = input$file)
+                self$format$write(dd, path = input$file)
                 TRUE
               },
               error = function(e){
@@ -262,11 +284,46 @@ Sheditor <- R6::R6Class(
               showModal(shiny::modalDialog(
                 size = "s",
                 div("Overwrite existing file?", style = "height: 40px; " ),
-                shiny::actionButton("modalOverwriteYes", "Yes", class = "modal-button"),
-                shiny::actionButton("modalOverwriteNo", "No", class = "modal-button"),
+                actionButton("modalOverwriteYes", "Yes", class = "modal-button"),
+                actionButton("modalOverwriteNo", "No", class = "modal-button"),
                 footer = NULL
               ))
             }
+          })
+
+
+
+
+        # + - edit metada ---------------------------------------------------------
+          observeEvent(input$btnMeta, {
+            lg$trace("User triggered btnMeta", event = "btnMeta")
+            lg$trace("Showing metdata modal", event = "modalMetaShow")
+
+            showModal(shiny::modalDialog(
+              size = "l",
+              textAreaInput(
+                inputId = "metaText",
+                "metadata",
+                value = values[["header"]],
+                width = "400px",
+                height = "600px"
+              ),
+              div("save changes", style = "height: 40px; " ),
+              actionButton("modalMetaSave",    "save changes", class = "modal-button"),
+              actionButton("modalMetaDiscard", "discard changes", class = "modal-button"),
+              footer = NULL
+            ))
+          })
+
+          observeEvent(input$modalMetaSave, {
+            lg$trace("saving metadata", event = "modalMetaSave")
+            values[["header"]] <- input$metaText
+            removeModal()
+          })
+
+          observeEvent(input$modalMetaDiscard, {
+            lg$trace("discarding changes to metadata", event = "modalMetaDiscard")
+            removeModal()
           })
 
 

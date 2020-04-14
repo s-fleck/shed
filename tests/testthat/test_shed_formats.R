@@ -25,3 +25,14 @@ test_that("shed_formats works as expected", {
     )
   }
 })
+
+
+
+
+
+test_that("csvy reading and writing works as expected", {
+
+  res <- shed_read_csvy(testthis::find_testdata("iris.csvy"))
+  shed2y(testthis::find_testdata("iris.csvy"))
+
+})

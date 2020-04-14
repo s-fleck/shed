@@ -3,6 +3,7 @@
 export(shed)
 export(shed2)
 export(shed2x)
+export(shed2y)
 export(shedx)
 import(rhandsontable)
 import(shiny)

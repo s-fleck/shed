@@ -2,7 +2,7 @@
 #constraints:
 #  X_SPECIES_PK:
 #    type: "PRIMARY KEY"
-#    columns: Species
+#    columns: Species, Blubb
 #---
 col_name;col_type;sql_type;sql_opts;fwf_start;fwf_end
 Sepal.Length;numeric;double;NOT NULL;1;2

@@ -135,6 +135,78 @@ shed_write_tsv <- function(x, path) {
 
 
 
+shed_read_csvy  <- function(
+  path,
+  locale
+){
+  lg$debug("Reading csv file", file = path, encoding = locale$encoding)
+
+  res <- as.data.frame(
+    readr::read_csv(
+      path,
+      col_names = FALSE,
+      col_types = readr::cols(.default = "c"),
+      comment = "#",
+      locale = locale
+    )
+  )
+
+  dd <- readLines(file)
+  dd <- dd[grepl("^#", dd)]
+
+  mostattributes(res) <- NULL
+  has_colnames_row(res) <- TRUE
+  attr(res, "header") <- dd
+  res
+}
+
+
+
+
+shed_read_csvy2  <- function(
+  path,
+  locale
+){
+  lg$debug("Reading csv file", file = path, encoding = locale$encoding)
+
+  res <- as.data.frame(
+    readr::read_csv2(
+      path,
+      col_names = FALSE,
+      col_types = readr::cols(.default = "c"),
+      comment = "#",
+      locale = locale
+    )
+  )
+
+  dd <- readLines(path)
+  dd <- dd[grepl("^#", dd)]
+
+  mostattributes(res) <- NULL
+  has_colnames_row(res) <- TRUE
+  attr(res, "header") <- paste(dd, collapse = "\n")
+  res
+}
+
+
+
+
+
+shed_write_csvy  <- function(x, path){
+  writeLines(attr(x, "header"), path)
+  readr::write_csv(x, path, col_names = FALSE, na = "", append = TRUE)
+}
+
+
+
+
+shed_write_csvy2 <- function(x, path){
+  writeLines(attr(x, "header"), path)
+  readr::write_csv2(x, path, col_names = FALSE, na = "", append = TRUE)
+}
+
+
+
 # predicates --------------------------------------------------------------
 
 is_read_fun <- function(x){
@@ -159,3 +231,5 @@ shed_format_csv   <- ShedFormat$new(shed_read_csv, shed_write_csv)
 shed_format_csv2  <- ShedFormat$new(shed_read_csv2, shed_write_csv2)
 shed_format_csvx  <- ShedFormat$new(shed_read_csv, shed_write_excel_csv)
 shed_format_csv2x <- ShedFormat$new(shed_read_csv2, shed_write_excel_csv2)
+shed_format_csvy <- ShedFormat$new(shed_read_csvy2, shed_write_csvy)
+shed_format_csvy2 <- ShedFormat$new(shed_read_csvy2, shed_write_csvy2)
