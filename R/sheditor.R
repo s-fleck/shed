@@ -160,7 +160,7 @@ Sheditor <- R6::R6Class(
           })
 
 
-          # infile ui -----------------------------------------------------
+          # input file form -----------------------------------------------------
           observe({
             lg$trace("File path was modified", event = "InputFilePathModified")
 
@@ -190,6 +190,7 @@ Sheditor <- R6::R6Class(
           })
 
 
+          # HOT ---------------------------------------------------------------------
           output$hot <- renderRHandsontable({
             if (is.data.frame(values[["output"]])){
               lg$trace("Rendering HOT", event = "renderHOT", data = values[["output"]])
@@ -204,9 +205,7 @@ Sheditor <- R6::R6Class(
           })
 
 
-          # i/o -----------------------------------------------------------------
-
-          # +- edit hot ----------------------------------------------------------
+          # +-- edit hot ----------------------------------------------------------
           observeEvent(input$hot, {
             lg$trace("HOT as modified by user", event = "userModifiedHot")
 
@@ -237,7 +236,7 @@ Sheditor <- R6::R6Class(
           })
 
 
-          # +- save --------------------------------------------------------------
+          # +-- save --------------------------------------------------------------
           save_file <- function(){
             lg$trace("Saving file", event = "saveFile")
 
@@ -294,7 +293,7 @@ Sheditor <- R6::R6Class(
 
 
 
-        # + - edit metada ---------------------------------------------------------
+        # +-- edit metada ---------------------------------------------------------
           observeEvent(input$btnMeta, {
             lg$trace("User triggered btnMeta", event = "btnMeta")
             lg$trace("Showing metdata modal", event = "modalMetaShow")
@@ -343,7 +342,7 @@ Sheditor <- R6::R6Class(
           })
 
 
-          # +- load -------------------------------------------------------
+          # +-- load -------------------------------------------------------
           observeEvent(input$btnLoad, {
             lg$trace("User triggered btnLoad", event = "btnLoad")
 
@@ -390,6 +389,9 @@ Sheditor <- R6::R6Class(
 
 
 
+
+
+# utils -------------------------------------------------------------------
 
 has_only_char_cols <- function(x){
   is.data.frame(x) && all(vapply(x, is.character, logical(1)))
